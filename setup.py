@@ -50,9 +50,12 @@ setup(
     author='Davide De Tommaso',
     author_email='dtmdvd@gmail.com',
     keywords=['multithreading'],
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "Operating System :: OS Independent",
+    classifiers = [
+                'Programming Language :: Python :: 3.5',
+                'Programming Language :: Python :: 3.6',
+                'Programming Language :: Python :: 3.7',
+                'Programming Language :: Python :: 3.8'
+
+
     ],
-    python_requires='>=3.6',
 )
