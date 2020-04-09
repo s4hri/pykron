@@ -43,12 +43,16 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='pykron',
-    version='0.1',
+    version='v0.1',
     description='Python module for managing asynchronous tasks',
     url='https://github.com/s4hri/pykron',
-    download_url='https://github.com/pykron/pykron/archive/0.1.tar.gz',
+    download_url='https://github.com/s4hri/pykron/archive/v0.1.tar.gz',
     author='Davide De Tommaso',
     author_email='dtmdvd@gmail.com',
     keywords=['multithreading'],
-    classifiers = ['Programming Language :: Python :: 3.8'],
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "Operating System :: OS Independent",
+    ],
+    python_requires='>=3.6',
 )
