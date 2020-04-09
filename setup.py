@@ -50,6 +50,7 @@ setup(
     author='Davide De Tommaso',
     author_email='dtmdvd@gmail.com',
     keywords=['multithreading'],
+    packages=find_packages(),
     classifiers = [
                 'Programming Language :: Python :: 3.5',
                 'Programming Language :: Python :: 3.6',
