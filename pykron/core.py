@@ -63,10 +63,22 @@ class Task:
                 """ % (self._name, self.status, self.duration, self.idle_time, str(self.retval))
 
     @property
+    def arrival_ts(self):
+        return self._arrival_ts
+
+    @property
     def duration(self):
         if not self._start_ts is None or self._end_ts is None:
             return self._end_ts - self._start_ts
         return None
+
+    @property
+    def end_ts(self):
+        return self._end_ts
+
+    @property
+    def exception(self):
+        return self._exception
 
     @property
     def idle_time(self):
@@ -75,12 +87,20 @@ class Task:
         return None
 
     @property
-    def status(self):
-        return self._status
+    def name(self):
+        return self._name
 
     @property
     def retval(self):
         return self._retval
+
+    @property
+    def status(self):
+        return self._status
+
+    @property
+    def start_ts(self):
+        return self._start_ts
 
     def run(self, timeout=10.0):
         self._start_ts = time.perf_counter()
@@ -108,7 +128,6 @@ class AsyncRequest:
     def decorator(foo):
 
         def f(*args, **kwargs):
-            #args = (self,) + args
             task = Task(foo, args, foo.__name__)
             req = AsyncRequest(task)
             return req
@@ -147,8 +166,8 @@ class AsyncRequest:
     def wait_for_completed(self, callback=None, request_timeout=None):
         if not callback is None:
             self.on_completed(callback)
-        res = self._future.result(request_timeout)
-        return res.retval
+        res = self.future.result(request_timeout)
+        return res
 
     def on_completed(self, callback):
         self._callback = callback
