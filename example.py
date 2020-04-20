@@ -37,14 +37,14 @@ class Agent:
     def callback(self, arg):
         print(arg)
 
-    @AsyncRequest.decorator
+    @AsyncRequest.decorator()
     def like(self, msg):
         msg = "I like " + msg
         time.sleep(3)
         print(msg)
         return 1
 
-    @AsyncRequest.decorator
+    @AsyncRequest.decorator()
     def see(self, msg):
         msg = "I see " + msg
         time.sleep(1)
@@ -61,22 +61,24 @@ b = jojo.see("bananas").on_completed(callback=jojo.callback)
 AsyncRequest.join([a,b])
 jojo.bye()
 
+def callback(task):
+    print(task)
 
-@AsyncRequest.decorator
+
+@AsyncRequest.decorator()
 def foo1():
     time.sleep(1)
     print("foo1")
     return 1
 
-@AsyncRequest.decorator
+@AsyncRequest.decorator(timeout=1.0)
 def foo2():
     time.sleep(2)
     print("foo2")
     return 2
 
 
-foo1().wait_for_completed()
-try:
-    foo2().wait_for_completed(timeout=1.0)
-except:
-    print("A timeout occurs!")
+a = foo1().wait_for_completed(callback=callback)
+b = foo2().wait_for_completed(callback=callback)
+
+AsyncRequest.join([a,b])

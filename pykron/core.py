@@ -36,15 +36,16 @@ import time
 
 class Task:
 
-    IDLE    = 'IDLE',
-    RUNNING = 'RUNNING',
-    SUCCEED = 'SUCCEED',
-    FAILED  = 'FAILED',
+    IDLE    = 'IDLE'
+    RUNNING = 'RUNNING'
+    SUCCEED = 'SUCCEED'
+    FAILED  = 'FAILED'
     TIMEOUT = 'TIMEOUT'
 
-    def __init__(self, target, args, name=None):
+    def __init__(self, target, args, timeout, name=None):
         self._target = target
         self._args = args
+        self._timeout = timeout
         self._name = name
         self._retval = None
         self._status = Task.IDLE
@@ -102,14 +103,14 @@ class Task:
     def start_ts(self):
         return self._start_ts
 
-    def run(self, timeout=10.0):
+    def run(self):
         self._start_ts = time.perf_counter()
         self._status = Task.RUNNING
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
             try:
                 future = executor.submit(self._target, *self._args)
-                t = future.result(timeout=timeout)
+                t = future.result(timeout=self._timeout)
                 self._retval = t
                 self._status = Task.SUCCEED
             except concurrent.futures.TimeoutError:
@@ -125,14 +126,14 @@ class Task:
 class AsyncRequest:
 
     @staticmethod
-    def decorator(foo):
-
-        def f(*args, **kwargs):
-            task = Task(foo, args, foo.__name__)
-            req = AsyncRequest(task)
-            return req
-
-        return f
+    def decorator(timeout=10.0):
+        def wrapper(foo):
+            def f(*args, **kwargs):
+                task = Task(foo, args, timeout, foo.__name__)
+                req = AsyncRequest(task)
+                return req
+            return f
+        return wrapper
 
     @staticmethod
     def join(requests, timeout=None):
@@ -163,11 +164,11 @@ class AsyncRequest:
     def future(self):
         return self._future
 
-    def wait_for_completed(self, callback=None, request_timeout=None):
+    def wait_for_completed(self, callback=None):
         if not callback is None:
             self.on_completed(callback)
-        res = self.future.result(request_timeout)
-        return res
+        #self.future.result()
+        return self
 
     def on_completed(self, callback):
         self._callback = callback
