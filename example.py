@@ -46,6 +46,7 @@ class Agent:
 
     @AsyncRequest.decorator()
     def see(self, msg):
+        a = 1/0
         msg = "I see " + msg
         time.sleep(1)
         print(msg)
@@ -82,3 +83,5 @@ a = foo1().wait_for_completed(callback=callback)
 b = foo2().wait_for_completed(callback=callback)
 
 AsyncRequest.join([a,b])
+
+AsyncRequest.exportExecutions()

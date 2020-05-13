@@ -32,7 +32,8 @@ from threading import Thread
 import concurrent.futures
 import threading
 import time
-
+import pandas as pd
+import os
 
 class Task:
 
@@ -41,6 +42,8 @@ class Task:
     SUCCEED = 'SUCCEED'
     FAILED  = 'FAILED'
     TIMEOUT = 'TIMEOUT'
+
+    EXECUTIONS = {}
 
     def __init__(self, target, args, timeout, name=None):
         self._target = target
@@ -55,13 +58,21 @@ class Task:
         self._duration = None
         self._exception = None
 
+        if not self.name in Task.EXECUTIONS.keys():
+            Task.EXECUTIONS[self.name] = []
+
     def __str__(self):
         return """>> Task '%s'
                 Status: %s
                 Duration:  %.4f (s)
                 Idle time: %.4f (s)
                 Return value: %s
-                """ % (self._name, self.status, self.duration, self.idle_time, str(self.retval))
+                Exception: %s
+                """ % (self.name, self.status, self.duration, self.idle_time, str(self.retval), self.exception)
+
+    @property
+    def args(self):
+        return self._args
 
     @property
     def arrival_ts(self):
@@ -118,9 +129,10 @@ class Task:
             except BaseException as e:
                 self._status = Task.FAILED
                 self._exception = e
-                raise BaseException(e)
+                #raise e
             finally:
                 self._end_ts = time.perf_counter()
+                Task.EXECUTIONS[self.name].append([str(time.ctime()), self.status, self.start_ts, self.end_ts, self.duration, self.idle_time, str(self.retval), str(self.exception), str(self.args)])
 
 
 class AsyncRequest:
@@ -151,6 +163,21 @@ class AsyncRequest:
 
         return return_values
 
+    @staticmethod
+    def getExecutions():
+        return Task.EXECUTIONS
+
+    @staticmethod
+    def getExecutionsByName(func_name):
+        if func_name in Task.EXECUTIONS.keys():
+            return Task.EXECUTIONS[func_name]
+        return None
+
+    @staticmethod
+    def exportExecutions(filepath='.'):
+        for k,v in Task.EXECUTIONS.items():
+            df = pd.DataFrame(v, columns=['Datetime', 'Status', 'Start_Ts', 'End_Ts', 'Duration', 'Idle_Time', 'Return_Value', 'Exception', 'Args'])
+            df.to_csv(os.path.join(filepath, k + '.csv'), sep=',', encoding='utf-8', index=False)
 
     def __init__(self, task):
         self._task = task
