@@ -174,10 +174,10 @@ class AsyncRequest:
         return None
 
     @staticmethod
-    def exportExecutions(filepath='.'):
+    def exportExecutions(filepath='.', mode='w'):
         for k,v in Task.EXECUTIONS.items():
             df = pd.DataFrame(v, columns=['Datetime', 'Status', 'Start_Ts', 'End_Ts', 'Duration', 'Idle_Time', 'Return_Value', 'Exception', 'Args'])
-            df.to_csv(os.path.join(filepath, k + '.csv'), sep=',', encoding='utf-8', index=False)
+            df.to_csv(os.path.join(filepath, k + '.csv'), sep=',', encoding='utf-8', index=False, mode=mode)
 
     def __init__(self, task):
         self._task = task
