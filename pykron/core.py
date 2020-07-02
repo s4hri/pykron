@@ -45,7 +45,7 @@ class Task:
 
     EXECUTIONS = {}
 
-    def __init__(self, target, args, timeout, name=None):
+    def __init__(self, target, args, timeout, name=None, DEBUG=False):
         self._target = target
         self._args = args
         self._timeout = timeout
@@ -57,6 +57,7 @@ class Task:
         self._end_ts = None
         self._duration = None
         self._exception = None
+        self._debug = DEBUG
 
         if not self.name in Task.EXECUTIONS.keys():
             Task.EXECUTIONS[self.name] = []
@@ -129,7 +130,8 @@ class Task:
             except BaseException as e:
                 self._status = Task.FAILED
                 self._exception = e
-                #raise e
+                if self._debug:
+                    raise e
             finally:
                 self._end_ts = time.perf_counter()
                 Task.EXECUTIONS[self.name].append([str(time.ctime()), self.status, self.start_ts, self.end_ts, self.duration, self.idle_time, str(self.retval), str(self.exception), str(self.args)])
@@ -138,10 +140,10 @@ class Task:
 class AsyncRequest:
 
     @staticmethod
-    def decorator(timeout=10.0):
+    def decorator(timeout=10.0, DEBUG=False):
         def wrapper(foo):
             def f(*args, **kwargs):
-                task = Task(foo, args, timeout, foo.__name__)
+                task = Task(foo, args, timeout, foo.__name__, DEBUG=DEBUG)
                 req = AsyncRequest(task)
                 return req
             return f
@@ -194,7 +196,7 @@ class AsyncRequest:
     def wait_for_completed(self, callback=None):
         if not callback is None:
             self.on_completed(callback)
-        #self.future.result()
+        self._completed.wait()
         return self
 
     def on_completed(self, callback):
