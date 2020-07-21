@@ -127,14 +127,18 @@ class Task:
                 self._status = Task.SUCCEED
             except concurrent.futures.TimeoutError:
                 self._status = Task.TIMEOUT
-            except BaseException as e:
+            except Exception as e:
                 self._status = Task.FAILED
                 self._exception = e
                 if self._debug:
-                    raise e
+                    print('%s(): generated an exception: %s' % (self.name, e))
+                    raise Exception(e)
             finally:
                 self._end_ts = time.perf_counter()
                 Task.EXECUTIONS[self.name].append([str(time.ctime()), self.status, self.start_ts, self.end_ts, self.duration, self.idle_time, str(self.retval), str(self.exception), str(self.args)])
+
+            return self._retval
+
 
 
 class AsyncRequest:

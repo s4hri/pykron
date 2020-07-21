@@ -32,7 +32,7 @@ from pykron.core import AsyncRequest
 import random
 import time
 
-DEBUG = False
+DEBUG = True
 
 class Agent:
 
@@ -43,7 +43,7 @@ class Agent:
     def like(self, msg):
         msg = "I like " + msg
         time.sleep(3)
-        print(msg)
+        self.see()
         return 1
 
     @AsyncRequest.decorator(DEBUG=DEBUG)
@@ -60,7 +60,8 @@ class Agent:
 
 jojo = Agent()
 a = jojo.like("strawberries").on_completed(callback=jojo.callback)
-b = jojo.see("bananas").on_completed(callback=jojo.callback)
+b = jojo.like("bananas").on_completed(callback=jojo.callback)
+#b = jojo.see("bananas").on_completed(callback=jojo.callback)
 AsyncRequest.join([a,b])
 jojo.bye()
 
