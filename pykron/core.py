@@ -34,6 +34,9 @@ import threading
 import time
 import pandas as pd
 import os
+import logging
+
+FORMAT = '%(asctime)s - pid=%(process)d - %(levelname)s - %(message)s'
 
 class Task:
 
@@ -43,9 +46,11 @@ class Task:
     FAILED  = 'FAILED'
     TIMEOUT = 'TIMEOUT'
 
+    TIMEOUT_DEFAULT = 10.0
+
     EXECUTIONS = {}
 
-    def __init__(self, target, args, timeout, name=None, DEBUG=False):
+    def __init__(self, target, args, timeout=TIMEOUT_DEFAULT, name=None, LOGGING_LEVEL=logging.DEBUG):
         self._target = target
         self._args = args
         self._timeout = timeout
@@ -57,7 +62,8 @@ class Task:
         self._end_ts = None
         self._duration = None
         self._exception = None
-        self._debug = DEBUG
+
+        logging.basicConfig(format=FORMAT, level=LOGGING_LEVEL)
 
         if not self.name in Task.EXECUTIONS.keys():
             Task.EXECUTIONS[self.name] = []
@@ -121,21 +127,22 @@ class Task:
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
             try:
+                logging.debug("Starting task %s() " % self._name)
                 future = executor.submit(self._target, *self._args)
                 t = future.result(timeout=self._timeout)
                 self._retval = t
                 self._status = Task.SUCCEED
             except concurrent.futures.TimeoutError:
                 self._status = Task.TIMEOUT
+                logging.warning("Timeout occurred for task %s()" % self._name)
             except Exception as e:
+                logging.error('def %s(): generated an exception: %s' % (self.name, e))
                 self._status = Task.FAILED
                 self._exception = e
-                if self._debug:
-                    print('%s(): generated an exception: %s' % (self.name, e))
-                    raise Exception(e)
             finally:
                 self._end_ts = time.perf_counter()
                 Task.EXECUTIONS[self.name].append([str(time.ctime()), self.status, self.start_ts, self.end_ts, self.duration, self.idle_time, str(self.retval), str(self.exception), str(self.args)])
+                logging.debug("Task %s() finished.\n%s" % (self._name, self))
 
             return self._retval
 
@@ -144,10 +151,10 @@ class Task:
 class AsyncRequest:
 
     @staticmethod
-    def decorator(timeout=10.0, DEBUG=False):
+    def decorator(timeout=Task.TIMEOUT_DEFAULT, LOGGING_LEVEL=logging.DEBUG):
         def wrapper(foo):
             def f(*args, **kwargs):
-                task = Task(foo, args, timeout, foo.__name__, DEBUG=DEBUG)
+                task = Task(foo, args, timeout, foo.__name__, LOGGING_LEVEL=logging.DEBUG)
                 req = AsyncRequest(task)
                 return req
             return f
