@@ -31,22 +31,22 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from pykron.core import AsyncRequest
 import random
 import time
+import logging
 
-DEBUG = False
+LOGGING_LEVEL = logging.DEBUG
 
 class Agent:
 
     def callback(self, arg):
-        print(arg)
+        print("I am the callback", arg)
 
-    @AsyncRequest.decorator(DEBUG=DEBUG)
+    @AsyncRequest.decorator(LOGGING_LEVEL=LOGGING_LEVEL)
     def like(self, msg):
         msg = "I like " + msg
         time.sleep(3)
-        print(msg)
         return 1
 
-    @AsyncRequest.decorator(DEBUG=DEBUG)
+    @AsyncRequest.decorator(LOGGING_LEVEL=LOGGING_LEVEL)
     def see(self, msg):
         a = 1/0
         msg = "I see " + msg
@@ -55,7 +55,7 @@ class Agent:
         return 2
 
     def bye(self):
-        print("Bye bye")
+        print("bye bye")
 
 
 jojo = Agent()
@@ -64,26 +64,20 @@ b = jojo.see("bananas").on_completed(callback=jojo.callback)
 AsyncRequest.join([a,b])
 jojo.bye()
 
-def callback(task):
-    print(task)
 
-
-@AsyncRequest.decorator(DEBUG=DEBUG)
+@AsyncRequest.decorator()
 def foo1():
     time.sleep(3)
-    print("foo1")
     return 1
 
-@AsyncRequest.decorator(timeout=1.0, DEBUG=DEBUG)
+@AsyncRequest.decorator(timeout=1.0)
 def foo2():
     time.sleep(2)
-    print("foo2")
     return 2
 
+input("Press a key to continue")
 
-a = foo1().wait_for_completed(callback=callback)
-print("foo1 completed")
-b = foo2().wait_for_completed(callback=callback)
-print("foo2 completed")
+a = foo1().wait_for_completed()
+b = foo2().wait_for_completed()
 
 AsyncRequest.exportExecutions()
