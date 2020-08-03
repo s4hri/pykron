@@ -28,56 +28,43 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from pykron.core import AsyncRequest
-import random
+from pykron.core import AsyncRequest, Task
 import time
 import logging
-
-LOGGING_LEVEL = logging.DEBUG
-
-class Agent:
-
-    def callback(self, arg):
-        print("I am the callback", arg)
-
-    @AsyncRequest.decorator(LOGGING_LEVEL=LOGGING_LEVEL)
-    def like(self, msg):
-        msg = "I like " + msg
-        time.sleep(3)
-        return 1
-
-    @AsyncRequest.decorator(LOGGING_LEVEL=LOGGING_LEVEL)
-    def see(self, msg):
-        a = 1/0
-        msg = "I see " + msg
-        time.sleep(1)
-        print(msg)
-        return 2
-
-    def bye(self):
-        print("bye bye")
+import os
 
 
-jojo = Agent()
-a = jojo.like("strawberries").on_completed(callback=jojo.callback)
-b = jojo.see("bananas").on_completed(callback=jojo.callback)
-AsyncRequest.join([a,b])
-jojo.bye()
+# You can assign to AsyncRequest.LOGGING_LEVEL any standard Python logging level
+AsyncRequest.LOGGING_LEVEL = logging.DEBUG
 
 
+# 2-levels nested function foo1->foo2->foo3
 @AsyncRequest.decorator()
 def foo1():
     time.sleep(3)
+    foo2().wait_for_completed()
     return 1
 
-@AsyncRequest.decorator(timeout=1.0)
+# A never-ending function
+@AsyncRequest.decorator()
 def foo2():
-    time.sleep(2)
+    while True:
+        time.sleep(1)
+        print("I am alive!")
+        foo3()
     return 2
 
-input("Press a key to continue")
+# A bugged function
+@AsyncRequest.decorator()
+def foo3():
+    return 1/0
 
-a = foo1().wait_for_completed()
-b = foo2().wait_for_completed()
+# User-defined callback function running once the foo1 ends
+def on_completed(task):
+    if task.status == Task.SUCCEED:
+        print("Everything's fine")
+    elif task.status == Task.TIMEOUT:
+        print("Something goes wrong")
 
-AsyncRequest.exportExecutions()
+# By default any AsyncRequest has a TIMEOUT of 10s
+foo1().wait_for_completed(callback=on_completed)

@@ -34,9 +34,14 @@ import threading
 import time
 import pandas as pd
 import os
+import sys
 import logging
+import atexit
+import linecache
 
-FORMAT = '%(asctime)s - pid=%(process)d - %(levelname)s - %(message)s'
+atexit.unregister(concurrent.futures.thread._python_exit)
+
+FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
 
 class Task:
 
@@ -50,23 +55,33 @@ class Task:
 
     EXECUTIONS = {}
 
-    def __init__(self, target, args, timeout=TIMEOUT_DEFAULT, name=None, LOGGING_LEVEL=logging.DEBUG):
+    def __init__(self, target, args, timeout=TIMEOUT_DEFAULT, name=None):
         self._target = target
         self._args = args
         self._timeout = timeout
-        self._name = name
         self._retval = None
         self._status = Task.IDLE
-        self._arrival_ts = time.perf_counter()
         self._start_ts = None
         self._end_ts = None
         self._duration = None
         self._exception = None
 
-        logging.basicConfig(format=FORMAT, level=LOGGING_LEVEL)
+        if name:
+            self._name = name
+        else:
+            self._name = self._target.__name__
+
+        if AsyncRequest.LOGGING_PATH:
+            filename = os.path.join(AsyncRequest.LOGGING_PATH, 'pykron.log')
+        else:
+            filename = None
+
+        logging.basicConfig(format=FORMAT, level=AsyncRequest.LOGGING_LEVEL, filename=filename)
 
         if not self.name in Task.EXECUTIONS.keys():
             Task.EXECUTIONS[self.name] = []
+
+        self._arrival_ts = time.perf_counter()
 
     def __str__(self):
         return """>> Task '%s'
@@ -121,47 +136,64 @@ class Task:
     def start_ts(self):
         return self._start_ts
 
+    @property
+    def timeout(self):
+        return self._timeout
+
     def run(self):
         self._start_ts = time.perf_counter()
         self._status = Task.RUNNING
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        waitForShutdown = True
+        try:
+            logging.debug("Starting task %s() " % self._name)
+            future = executor.submit(self._target, *self._args)
+            t = future.result(timeout=self._timeout)
+            self._retval = t
+            self._status = Task.SUCCEED
+        except concurrent.futures.TimeoutError:
+            self._status = Task.TIMEOUT
+            waitForShutdown = False
+            logging.error("Timeout occurred after %.2fs for task %s()" % (self._timeout, self._name))
+        except Exception as e:
+            exc_type, exc_obj, tb = sys.exc_info()
+            f = tb.tb_frame
+            lineno = tb.tb_lineno
+            filename = f.f_code.co_filename
+            linecache.checkcache(filename)
+            line = linecache.getline(filename, lineno, f.f_globals)
+            logging.error('def %s(): generated an exception: %s - Line %s in file %s %s' % (self.name, e, lineno, filename,line.strip()))
+            self._status = Task.FAILED
+            self._exception = e
+        finally:
+            self._end_ts = time.perf_counter()
+            Task.EXECUTIONS[self.name].append([str(time.ctime()), self.status, self.start_ts, self.end_ts, self.duration, self.idle_time, str(self.retval), str(self.exception), str(self.args)])
+            logging.debug("Task %s() completed! Status: %s, Duration: %.4f" % (self._name, self.status, self.duration))
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-            try:
-                logging.debug("Starting task %s() " % self._name)
-                future = executor.submit(self._target, *self._args)
-                t = future.result(timeout=self._timeout)
-                self._retval = t
-                self._status = Task.SUCCEED
-            except concurrent.futures.TimeoutError:
-                self._status = Task.TIMEOUT
-                logging.warning("Timeout occurred for task %s()" % self._name)
-            except Exception as e:
-                logging.error('def %s(): generated an exception: %s' % (self.name, e))
-                self._status = Task.FAILED
-                self._exception = e
-            finally:
-                self._end_ts = time.perf_counter()
-                Task.EXECUTIONS[self.name].append([str(time.ctime()), self.status, self.start_ts, self.end_ts, self.duration, self.idle_time, str(self.retval), str(self.exception), str(self.args)])
-                logging.debug("Task %s() finished.\n%s" % (self._name, self))
+        executor.shutdown(wait=waitForShutdown)
 
-            return self._retval
-
+        return self._retval
 
 
 class AsyncRequest:
 
+    LOGGING_LEVEL = logging.DEBUG
+    LOGGING_PATH = None
+
     @staticmethod
-    def decorator(timeout=Task.TIMEOUT_DEFAULT, LOGGING_LEVEL=logging.DEBUG):
+    def decorator(timeout=Task.TIMEOUT_DEFAULT):
         def wrapper(foo):
             def f(*args, **kwargs):
-                task = Task(foo, args, timeout, foo.__name__, LOGGING_LEVEL=logging.DEBUG)
+                task = Task(target=foo,
+                            args=args,
+                            timeout=timeout)
                 req = AsyncRequest(task)
                 return req
             return f
         return wrapper
 
     @staticmethod
-    def join(requests, timeout=None):
+    def join(requests):
         futures = {}
         return_values = []
         idx = 0
@@ -172,7 +204,7 @@ class AsyncRequest:
             idx += 1
 
         for future in concurrent.futures.as_completed(futures):
-            return_values[futures[future]] = future.result(timeout)
+            return_values[futures[future]] = future.result()
 
         return return_values
 
@@ -194,30 +226,25 @@ class AsyncRequest:
 
     def __init__(self, task):
         self._task = task
-        self._completed = threading.Event()
+        self._timeout = task.timeout
         self._callback = None
-
-        executor = concurrent.futures.ThreadPoolExecutor()
-        self._future = executor.submit(self.run)
+        self._executor = concurrent.futures.ThreadPoolExecutor()
+        self._future = self._executor.submit(self.run)
 
     @property
     def future(self):
         return self._future
 
-    def wait_for_completed(self, callback=None):
-        if not callback is None:
-            self.on_completed(callback)
-        self._completed.wait()
-        return self
-
-    def on_completed(self, callback):
-        self._callback = callback
+    def wait_for_completed(self, timeout=None, callback=None):
+        if callback:
+            self._callback = callback
+        try:
+            self.future.result(timeout=timeout)
+        except concurrent.futures.TimeoutError:
+            logging.error("Timeout occurred after %.2fs for task %s() due to wait_for_completed timeout" % (timeout, self._task.name))
         return self
 
     def run(self):
-        self._task.run()
-        self._completed.set()
-        if self._callback is None:
-            return self._task
-        else:
-            return self._callback(self._task)
+        res = self._task.run()
+        if self._callback:
+            self._callback(self._task)
