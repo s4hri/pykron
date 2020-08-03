@@ -28,36 +28,28 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from setuptools import setup, find_packages
-from codecs import open
-from os import path
-
-here = path.abspath(path.dirname(__file__))
-
-# Get the long description from the README file
-with open(path.join(here, 'README.md'), encoding='utf-8') as f:
-    long_description = f.read()
-
-# Arguments marked as "Required" below must be included for upload to PyPI.
-# Fields marked as "Optional" may be commented out.
-
-setup(
-    name='pykron',
-    version='0.9',
-    description='Python module for managing asynchronous tasks',
-    url='https://github.com/s4hri/pykron',
-    download_url='https://github.com/s4hri/pykron/archive/0.9.tar.gz',
-    author='Davide De Tommaso',
-    author_email='dtmdvd@gmail.com',
-    install_requires=['pandas==1.0.3'],
-    keywords=['multithreading'],
-    packages=find_packages(),
-    classifiers = [
-                'Programming Language :: Python :: 3.5',
-                'Programming Language :: Python :: 3.6',
-                'Programming Language :: Python :: 3.7',
-                'Programming Language :: Python :: 3.8'
+from pykron.core import AsyncRequest
+import time
+import logging
+import os
 
 
-    ],
-)
+# You can assign to AsyncRequest.LOGGING_LEVEL any standard Python logging level
+AsyncRequest.LOGGING_LEVEL = logging.DEBUG
+
+# Specifying a AsyncRequest.LOGGING_PATH will produce a logfile instead of stream
+AsyncRequest.LOGGING_PATH = os.path.join(os.getcwd(), 'logs')
+
+# Decorating any Python function with AsyncRequest.decorator you will be able to
+# parallelize its execution thanks to ThreadPoolExecutor
+@AsyncRequest.decorator()
+def like(msg):
+    time.sleep(3)
+    print("I like " + msg)
+    return 1
+
+a = like("strawberries")
+b = like("bananas")
+AsyncRequest.join([a,b])
+
+c = like("mangos").wait_for_completed()
