@@ -29,6 +29,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 from threading import Thread
+from concurrent.futures import thread
 import concurrent.futures
 import threading
 import time
@@ -38,6 +39,7 @@ import sys
 import logging
 import atexit
 import linecache
+
 
 atexit.unregister(concurrent.futures.thread._python_exit)
 
