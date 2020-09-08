@@ -29,13 +29,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 from pykron.core import AsyncRequest, Task
+import pykron
 import time
 import logging
 import os
 
 
 # You can assign to AsyncRequest.LOGGING_LEVEL any standard Python logging level
-AsyncRequest.LOGGING_LEVEL = logging.DEBUG
+pykron.core.LOGGING_LEVEL = logging.DEBUG
 
 
 # 2-levels nested function foo1->foo2->foo3

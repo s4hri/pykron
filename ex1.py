@@ -29,16 +29,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 from pykron.core import AsyncRequest
+import pykron
 import time
 import logging
 import os
 
 
 # You can assign to AsyncRequest.LOGGING_LEVEL any standard Python logging level
-AsyncRequest.LOGGING_LEVEL = logging.DEBUG
+pykron.core.LOGGING_LEVEL = logging.DEBUG
 
 # Specifying a AsyncRequest.LOGGING_PATH will produce a logfile instead of stream
-AsyncRequest.LOGGING_PATH = os.path.join(os.getcwd(), 'logs')
+pykron.core.LOGGING_PATH = 'logs'
 
 # Decorating any Python function with AsyncRequest.decorator you will be able to
 # parallelize its execution thanks to ThreadPoolExecutor
