@@ -72,11 +72,17 @@ class PykronLogger:
             formatter = logging.Formatter(FORMAT)
             ch.setFormatter(formatter)
             self._logger.addHandler(ch)
+            self._task_id=0
 
     @property
     def log(self):
        return self._logger
 
+    _id_lock = threading.Lock()
+    def getNewId(self):
+        with self._id_lock:
+            self._task_id += 1
+            return self._task_id
 
 class Task:
 
@@ -173,8 +179,9 @@ class Task:
         self._status = Task.RUNNING
         executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         waitForShutdown = True
+        self._id = logger.getNewId()
         try:
-            logger.log.debug("Starting task %s() " % self._name)
+            logger.log.debug("T%d: Starting task %s() " % (self._id, self._name))
             future = executor.submit(self._target, *self._args)
             t = future.result(timeout=self._timeout)
             self._retval = t
@@ -182,19 +189,19 @@ class Task:
         except concurrent.futures.TimeoutError:
             self._status = Task.TIMEOUT
             waitForShutdown = False
-            logger.log.error("Timeout occurred after %.2fs for task %s()" % (self._timeout, self._name))
+            logger.log.error("T%d: Timeout occurred after %.2fs for task %s()" % (self._id, self._timeout, self._name))
         except Exception as e:
             exc_type, exc_obj, tb = sys.exc_info()
             f = traceback.extract_tb(tb)[-1]
             lineno = f.lineno
             filename = f.filename
-            logger.log.error('def %s(): generated an exception: %s - Line: %s,  File: %s' % (self.name, e, lineno, filename))
+            logger.log.error('T%d: def %s(): generated an exception: %s - Line: %s,  File: %s' % (self._id, self.name, e, lineno, filename))
             self._status = Task.FAILED
             self._exception = e
         finally:
             self._end_ts = time.perf_counter()
             Task.EXECUTIONS[self.name].append([str(time.ctime()), self.status, self.start_ts, self.end_ts, self.duration, self.idle_time, str(self.retval), str(self.exception), str(self.args)])
-            logger.log.debug("Task %s() completed! Status: %s, Duration: %.4f" % (self._name, self.status, self.duration))
+            logger.log.debug("T%d: Task %s() completed! Status: %s, Duration: %.4f" % (self._id, self._name, self.status, self.duration))
 
         executor.shutdown(wait=waitForShutdown)
 
