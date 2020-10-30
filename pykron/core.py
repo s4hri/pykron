@@ -43,18 +43,18 @@ import traceback
 
 atexit.unregister(concurrent.futures.thread._python_exit)
 
-FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
-LOGGING_LEVEL = logging.DEBUG
-LOGGING_PATH = None
 
 class PykronLogger:
+    FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
+    LOGGING_LEVEL = logging.DEBUG
+    LOGGING_PATH = None
     _instance = None
 
     @staticmethod
     def getInstance():
         if PykronLogger._instance == None:
             PykronLogger()
-        return PykronLogger._instance 
+        return PykronLogger._instance
 
     def __init__(self):
         if PykronLogger._instance != None:
@@ -62,27 +62,20 @@ class PykronLogger:
         else:
             PykronLogger._instance = self
             self._logger = logging.getLogger('pykron')
-            self._logger.setLevel(LOGGING_LEVEL)
-            if not LOGGING_PATH is None:
-                filename = os.path.join(LOGGING_PATH, 'pykron.log')
+            self._logger.setLevel(PykronLogger.LOGGING_LEVEL)
+            if not PykronLogger.LOGGING_PATH is None:
+                filename = os.path.join(PykronLogger.LOGGING_PATH, 'pykron.log')
                 ch = logging.FileHandler(filename)
             else:
                 ch = logging.StreamHandler()
-            ch.setLevel(LOGGING_LEVEL)
-            formatter = logging.Formatter(FORMAT)
+            ch.setLevel(PykronLogger.LOGGING_LEVEL)
+            formatter = logging.Formatter(PykronLogger.FORMAT)
             ch.setFormatter(formatter)
             self._logger.addHandler(ch)
-            self._task_id=0
 
     @property
     def log(self):
        return self._logger
-
-    _id_lock = threading.Lock()
-    def getNewId(self):
-        with self._id_lock:
-            self._task_id += 1
-            return self._task_id
 
 class Task:
 
@@ -106,6 +99,8 @@ class Task:
         self._end_ts = None
         self._duration = None
         self._exception = None
+        self._task_id = threading.get_native_id()
+        self._logger = PykronLogger.getInstance()
 
         if name:
             self._name = name
@@ -174,14 +169,13 @@ class Task:
     def timeout(self):
         return self._timeout
 
-    def run(self, logger):
+    def run(self):
         self._start_ts = time.perf_counter()
         self._status = Task.RUNNING
         executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         waitForShutdown = True
-        self._id = logger.getNewId()
         try:
-            logger.log.debug("T%d: Starting task %s() " % (self._id, self._name))
+            self._logger.log.debug("T%d: Starting task %s() " % (self._task_id, self._name))
             future = executor.submit(self._target, *self._args)
             t = future.result(timeout=self._timeout)
             self._retval = t
@@ -189,19 +183,19 @@ class Task:
         except concurrent.futures.TimeoutError:
             self._status = Task.TIMEOUT
             waitForShutdown = False
-            logger.log.error("T%d: Timeout occurred after %.2fs for task %s()" % (self._id, self._timeout, self._name))
+            self._logger.log.error("T%d: Timeout occurred after %.2fs for task %s()" % (self._task_id, self._timeout, self._name))
         except Exception as e:
             exc_type, exc_obj, tb = sys.exc_info()
             f = traceback.extract_tb(tb)[-1]
             lineno = f.lineno
             filename = f.filename
-            logger.log.error('T%d: def %s(): generated an exception: %s - Line: %s,  File: %s' % (self._id, self.name, e, lineno, filename))
+            self._logger.log.error('T%d: def %s(): generated an exception: %s - Line: %s,  File: %s' % (self._task_id, self.name, e, lineno, filename))
             self._status = Task.FAILED
             self._exception = e
         finally:
             self._end_ts = time.perf_counter()
             Task.EXECUTIONS[self.name].append([str(time.ctime()), self.status, self.start_ts, self.end_ts, self.duration, self.idle_time, str(self.retval), str(self.exception), str(self.args)])
-            logger.log.debug("T%d: Task %s() completed! Status: %s, Duration: %.4f" % (self._id, self._name, self.status, self.duration))
+            self._logger.log.debug("T%d: Task %s() completed! Status: %s, Duration: %.4f" % (self._task_id, self._name, self.status, self.duration))
 
         executor.shutdown(wait=waitForShutdown)
 
@@ -258,24 +252,24 @@ class AsyncRequest:
         self._task = task
         self._timeout = task.timeout
         self._callback = None
-        self._executor = concurrent.futures.ThreadPoolExecutor()
         self._logger = PykronLogger.getInstance()
+        self._executor = concurrent.futures.ThreadPoolExecutor()
         self._future = self._executor.submit(self.run)
 
     @property
     def future(self):
         return self._future
 
-    def wait_for_completed(self, timeout=None, callback=None):
+    def wait_for_completed(self, timeout=Task.TIMEOUT_DEFAULT, callback=None):
         if callback:
             self._callback = callback
         try:
             self.future.result(timeout=timeout)
         except concurrent.futures.TimeoutError:
-            self._logger.log.error("Timeout occurred after %.2fs for task %s() due to wait_for_completed timeout" % (timeout, self._task.name))
+            self._logger.log.error("Timeout occurred for wait_for_completed() after %.2fs for task %s() due to wait_for_completed timeout" % (timeout, self._task.name))
         return self
 
     def run(self):
-        res = self._task.run(self._logger)
+        res = self._task.run()
         if self._callback:
             self._callback(self._task)

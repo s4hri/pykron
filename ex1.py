@@ -34,19 +34,15 @@ import time
 import logging
 import os
 
-
-# You can assign to AsyncRequest.LOGGING_LEVEL any standard Python logging level
-pykron.core.LOGGING_LEVEL = logging.DEBUG
-
 # Specifying a AsyncRequest.LOGGING_PATH will produce a logfile instead of stream
-pykron.core.LOGGING_PATH = 'logs'
+PykronLogger.LOGGING_PATH = '.'
 
 # Decorating any Python function with AsyncRequest.decorator you will be able to
 # parallelize its execution thanks to ThreadPoolExecutor
 @AsyncRequest.decorator()
 def like(msg):
-    time.sleep(3)
     print("I like " + msg)
+    time.sleep(2)
     return 1
 
 a = like("strawberries")

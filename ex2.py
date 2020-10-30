@@ -28,7 +28,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from pykron.core import AsyncRequest, Task
+from pykron.core import AsyncRequest, Task, PykronLogger
 import pykron
 import time
 import logging
@@ -36,8 +36,7 @@ import os
 
 
 # You can assign to AsyncRequest.LOGGING_LEVEL any standard Python logging level
-pykron.core.LOGGING_LEVEL = logging.DEBUG
-
+PykronLogger.LOGGING_LEVEL = logging.DEBUG
 
 # 2-levels nested function foo1->foo2->foo3
 @AsyncRequest.decorator()
@@ -67,5 +66,4 @@ def on_completed(task):
     elif task.status == Task.TIMEOUT:
         print("Something goes wrong")
 
-# By default any AsyncRequest has a TIMEOUT of 10s
 foo1().wait_for_completed(callback=on_completed)
