@@ -28,11 +28,11 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from pykron.core import AsyncRequest, Task, PykronLogger
-import pykron
+from pykron.core import AsyncRequest, Task
+from pykron.logging import PykronLogger
+
 import time
 import logging
-import os
 
 
 # You can assign to AsyncRequest.LOGGING_LEVEL any standard Python logging level

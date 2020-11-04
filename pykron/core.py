@@ -36,103 +36,13 @@ import time
 import pandas as pd
 import os
 import sys
-import logging
-import logging.config
-import logging.handlers
 import atexit
 import linecache
 import traceback
 
+from pykron.logging import PykronLogger
+
 atexit.unregister(concurrent.futures.thread._python_exit)
-
-class PykronLogger:
-    LOGGING_SETTINGS = None
-    LOGGING_SETTINGS_JSON = {
-        'version': 1,
-        'disable_existing_loggers': True,
-        'formatters': {
-            'json': {
-                'format': '{"asctime": "%(asctime)-15s", "created": %(created)f, "relativeCreated": %(relativeCreated)f, "levelname": "%(levelname)s", "module": "%(module)s", "process": %(process)d, "processName": "%(processName)s", "thread": %(thread)d, "threadName": "%(threadName)s", "message": "%(message)s"}'
-            },
-            'verbose': {
-                'format': '%(asctime)s - %(levelname)s - %(module)s - %(process)d - %(thread)d - %(message)s'
-            },
-            'simple': {
-                'format': '%(asctime)s - %(levelname)s - %(message)s'
-            },
-        },
-        'handlers': {
-            'file': {
-                'level':'DEBUG',
-                'class':'logging.FileHandler',
-                # this works, but only in a configfile:
-                #'filename': (__import__('datetime').datetime.now().strftime('log/pykron_%%Y-%%m-%%d_%%H-%%M-%%S.log'), 'a'),
-                'filename': 'pykron.log',
-                'mode': 'w',
-                'formatter': 'json'
-            },
-            'console': {
-                'level':'DEBUG',
-                'class':'logging.StreamHandler',
-                'formatter': 'simple'
-            }
-        },
-        'loggers': {
-            'default': {
-                'handlers': ['console', 'file'],
-                'level': 'DEBUG'
-            }
-        },
-        'root': {
-                'handlers': ['console', 'file'],
-                'level': 'DEBUG'
-        }
-    }
-
-    FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
-    LOGGING_LEVEL = logging.DEBUG
-    LOGGING_PATH = None
-    _instance = None
-
-    @staticmethod
-    def getInstance():
-        if PykronLogger._instance == None:
-            PykronLogger()
-        return PykronLogger._instance
-
-    def __init__(self):
-        if PykronLogger._instance != None:
-            raise Exception("This class is a singleton!")
-        else:
-            PykronLogger._instance = self
-            if PykronLogger.LOGGING_SETTINGS is None:
-                self._logger = logging.getLogger('pykron')
-                self._logger.setLevel(PykronLogger.LOGGING_LEVEL)
-                if not PykronLogger.LOGGING_PATH is None:
-                    filename = os.path.join(PykronLogger.LOGGING_PATH, 'pykron.log')
-                    ch = logging.FileHandler(filename, mode='w')
-                else:
-                    ch = logging.StreamHandler()
-                ch.setLevel(PykronLogger.LOGGING_LEVEL)
-                formatter = logging.Formatter(PykronLogger.FORMAT)
-                ch.setFormatter(formatter)
-                self._logger.addHandler(ch)
-            else:
-                logging.config.dictConfig(PykronLogger.LOGGING_SETTINGS)
-                self._logger = logging.getLogger('pykron')
-            self._task_id = 0
-
-    @property
-    def log(self):
-       return self._logger
-
-    # get_native_id is not unique and not readable easily during the ongoing execution
-    # this solution has the advantage of being consecutive
-    _id_lock = threading.Lock()
-    def getNewId(self):
-        with self._id_lock:
-            self._task_id += 1
-            return self._task_id
 
 
 class Task:
