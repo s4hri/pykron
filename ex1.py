@@ -28,7 +28,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from pykron.core import AsyncRequest
+from pykron.core import AsyncRequest, PykronManager
 from pykron.logging import PykronLogger
 
 import pykron
@@ -49,6 +49,6 @@ def like(msg):
 
 a = like("strawberries")
 b = like("bananas")
-AsyncRequest.join([a,b])
+PykronManager.join([a,b])
 
 c = like("mangos").wait_for_completed()

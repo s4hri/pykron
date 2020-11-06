@@ -34,10 +34,14 @@ import logging.handlers
 
 import threading
 import os
+import csv
+import datetime
 
 class PykronLogger:
+
     LOGGING_SETTINGS = None
     LOGGING_SETTINGS_JSON = {
+
         'version': 1,
         'disable_existing_loggers': True,
         'formatters': {
@@ -98,11 +102,15 @@ class PykronLogger:
             if PykronLogger.LOGGING_SETTINGS is None:
                 self._logger = logging.getLogger('pykron')
                 self._logger.setLevel(PykronLogger.LOGGING_LEVEL)
-                if not PykronLogger.LOGGING_PATH is None:
+                if PykronLogger.LOGGING_PATH is None:
+                    ch = logging.StreamHandler()
+                else:
                     filename = os.path.join(PykronLogger.LOGGING_PATH, 'pykron.log')
                     ch = logging.FileHandler(filename, mode='w')
-                else:
-                    ch = logging.StreamHandler()
+                    self._fexec_name = datetime.datetime.now().strftime('pykron_%d.%m.%Y_%H:%M.csv')
+                    with open(os.path.join(PykronLogger.LOGGING_PATH, self._fexec_name), 'w') as f:
+                        writer = csv.writer(f)
+                        writer.writerow(['Datetime', 'Func_Name', 'Task_Name', 'Status', 'Start_Ts', 'End_Ts', 'Duration', 'Idle_Time', 'Return_Value', 'Exception', 'Args'])
                 ch.setLevel(PykronLogger.LOGGING_LEVEL)
                 formatter = logging.Formatter(PykronLogger.FORMAT)
                 ch.setFormatter(formatter)
@@ -110,16 +118,14 @@ class PykronLogger:
             else:
                 logging.config.dictConfig(PykronLogger.LOGGING_SETTINGS)
                 self._logger = logging.getLogger('pykron')
-            self._task_id = 0
 
     @property
     def log(self):
        return self._logger
 
-    # get_native_id is not unique and not readable easily during the ongoing execution
-    # this solution has the advantage of being consecutive
-    _id_lock = threading.Lock()
-    def getNewId(self):
-        with self._id_lock:
-            self._task_id += 1
-            return self._task_id
+    def log_execution(self, task_exec):
+        if PykronLogger.LOGGING_PATH is None:
+            return
+        with open(os.path.join(PykronLogger.LOGGING_PATH, self._fexec_name), 'a') as f:
+            writer = csv.writer(f)
+            writer.writerow(task_exec)

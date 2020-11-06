@@ -30,20 +30,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from threading import Thread
 from concurrent.futures import thread
+from inspect import getframeinfo, stack
 import concurrent.futures
 import threading
 import time
-import pandas as pd
 import os
 import sys
-import atexit
+import csv
 import linecache
 import traceback
 
 from pykron.logging import PykronLogger
-
-atexit.unregister(concurrent.futures.thread._python_exit)
-
 
 class Task:
 
@@ -53,11 +50,7 @@ class Task:
     FAILED  = 'FAILED'
     TIMEOUT = 'TIMEOUT'
 
-    TIMEOUT_DEFAULT = 10.0
-
-    EXECUTIONS = {}
-
-    def __init__(self, target, args, timeout=TIMEOUT_DEFAULT, name=None, thread_parent=''):
+    def __init__(self, target, args, timeout, parent_id):
         self._target = target
         self._args = args
         self._timeout = timeout
@@ -68,15 +61,12 @@ class Task:
         self._duration = None
         self._exception = None
         self._logger = PykronLogger.getInstance()
-        self._thread_parent = thread_parent
+        self._parent_id = parent_id
 
-        if name:
-            self._name = name
-        else:
-            self._name = self._target.__name__
+        self._func_name = self._target.__name__
 
-        if not self.name in Task.EXECUTIONS.keys():
-            Task.EXECUTIONS[self.name] = []
+        caller = getframeinfo(stack()[2][0])
+        self._name = "%s[%s:%d]" % (self._func_name, caller.filename, caller.lineno)
 
         self._arrival_ts = time.perf_counter()
 
@@ -112,10 +102,18 @@ class Task:
         return self._exception
 
     @property
+    def func_name(self):
+        return self._func_name
+
+    @property
     def idle_time(self):
         if not self._start_ts is None or self._arrival_ts is None:
             return self._start_ts - self._arrival_ts
         return None
+
+    @property
+    def parent_id(self):
+        return self._parent_id
 
     @property
     def name(self):
@@ -134,58 +132,59 @@ class Task:
         return self._start_ts
 
     @property
+    def thread_id(self):
+        return self._thread_id
+
+    @property
     def timeout(self):
         return self._timeout
 
+    def submit(self, timeout):
+        self._timeout = timeout
+        self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        future = self._executor.submit(self.run)
+        return future
+
+    def cancel(self):
+        self._logger.log.debug("%s: Task cancelling %s() [Thread id: T%d, Parent id: T%d]" % (self.name, self.func_name, self._thread_id, self._parent_id))
+        self._executor.shutdown(wait=False)
+
     def run(self):
+        self._thread_id = threading.get_native_id() + 1
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        future = executor.submit(self._target, *self._args)
+        self._logger.log.debug("%s: Task starting %s() [Thread id: T%d, Parent id: T%d]" % (self.name, self.func_name, self._thread_id, self._parent_id))
         self._start_ts = time.perf_counter()
         self._status = Task.RUNNING
-        self._task_id = self._logger.getNewId() # this is an incrementing id
-        thread_name_prefix = threading.current_thread().name + '_T' + str(self._task_id)
-        executor = concurrent.futures.ThreadPoolExecutor(max_workers=1,thread_name_prefix=thread_name_prefix)
-        waitForShutdown = True
         try:
-            self._logger.log.debug("T%d: Starting task %s() by %s " % (self._task_id, self._name, self._thread_parent))
-            future = executor.submit(self._target, *self._args)
-            t = future.result(timeout=self._timeout)
-            self._retval = t
+            self._retval = future.result(timeout=self.timeout)
             self._status = Task.SUCCEED
         except concurrent.futures.TimeoutError:
             self._status = Task.TIMEOUT
-            waitForShutdown = False
-            self._logger.log.error("T%d: Timeout occurred after %.2fs for task %s()" % (self._task_id, self._timeout, self._name))
+            self._exception = concurrent.futures.TimeoutError
+            self._logger.log.error("%s: Timeout occurred after %.2fs" % (self.name, self._timeout))
         except Exception as e:
             exc_type, exc_obj, tb = sys.exc_info()
             f = traceback.extract_tb(tb)[-1]
             lineno = f.lineno
             filename = f.filename
-            self._logger.log.error('T%d: def %s(): generated an exception: %s - Line: %s,  File: %s' % (self._task_id, self.name, e, lineno, filename))
+            self._logger.log.error('%s: def %s: generated an exception: %s - Line: %s,  File: %s' % (self.name, self.func_name, e, lineno, filename))
             self._status = Task.FAILED
             self._exception = e
         finally:
             self._end_ts = time.perf_counter()
-            Task.EXECUTIONS[self.name].append([str(time.ctime()), self.status, self.start_ts, self.end_ts, self.duration, self.idle_time, str(self.retval), str(self.exception), str(self.args)])
-            self._logger.log.debug("T%d: Task %s() completed! Status: %s, Duration: %.4f" % (self._task_id, self._name, self.status, self.duration))
+            self._logger.log.debug("%s: Task completed! Status: %s, Duration: %.4f" % (self.name, self.status, self.duration))
 
-        executor.shutdown(wait=waitForShutdown)
+class PykronManager:
 
-        return self._retval
-
-
-class AsyncRequest:
+    _instance = None
+    TIMEOUT_DEFAULT = 10.0
 
     @staticmethod
-    def decorator(timeout=Task.TIMEOUT_DEFAULT):
-        def wrapper(foo):
-            def f(*args, **kwargs):
-                task = Task(target=foo,
-                            args=args,
-                            timeout=timeout,
-                            thread_parent=threading.current_thread().name)
-                req = AsyncRequest(task)
-                return req
-            return f
-        return wrapper
+    def getInstance():
+        if PykronManager._instance == None:
+            PykronManager()
+        return PykronManager._instance
 
     @staticmethod
     def join(requests):
@@ -203,45 +202,80 @@ class AsyncRequest:
 
         return return_values
 
-    @staticmethod
-    def getExecutions():
-        return Task.EXECUTIONS
-
-    @staticmethod
-    def getExecutionsByName(func_name):
-        if func_name in Task.EXECUTIONS.keys():
-            return Task.EXECUTIONS[func_name]
-        return None
-
-    @staticmethod
-    def exportExecutions(filepath='.', mode='w'):
-        for k,v in Task.EXECUTIONS.items():
-            df = pd.DataFrame(v, columns=['Datetime', 'Status', 'Start_Ts', 'End_Ts', 'Duration', 'Idle_Time', 'Return_Value', 'Exception', 'Args'])
-            df.to_csv(os.path.join(filepath, k + '.csv'), sep=',', encoding='utf-8', index=False, mode=mode)
-
-    def __init__(self, task):
-        self._task = task
-        self._timeout = task.timeout
-        self._callback = None
-        self._thread_name_prefix = threading.current_thread().name
+    def __init__(self):
+        if PykronManager._instance != None:
+            raise Exception("This class is a singleton!")
+        else:
+            PykronManager._instance = self
         self._logger = PykronLogger.getInstance()
-        self._executor = concurrent.futures.ThreadPoolExecutor(thread_name_prefix=self._thread_name_prefix)
-        self._future = self._executor.submit(self.run)
+
+        self._requests = {}
+        self._parents = {}
+        self._futures = {}
+        self._task_executions = {}
+
+
+    def createRequest(self, task, timeout):
+        req = AsyncRequest(task, timeout)
+        req_id = task.thread_id
+        self._requests[req_id] = req
+        self._parents[req_id] = task.parent_id
+        self._futures[req_id] = req.future
+
+        if not task.name in self._task_executions.keys():
+            self._task_executions[task.name] = []
+        self._futures[req_id].add_done_callback(self.completed)
+        return req
+
+    def completed(self, future):
+        req_id = [k for k, v in self._futures.items() if v == future][0]
+        task = self._requests[req_id].task
+        task_exec = [str(time.ctime()), task.func_name, task.name, task.status, task.start_ts, task.end_ts, task.duration, task.idle_time, str(task.retval), str(task.exception), str(task.args)]
+        self._task_executions[task.name].append(task_exec)
+        if task.status != Task.SUCCEED:
+            #req_id = [k for k, v in self._parents.items() if v == task.parent_id][0]
+            #self._requests[self._parents[req_id]].task.cancel()
+            pass
+        self._logger.log_execution(task_exec)
+
+class AsyncRequest:
+
+    @staticmethod
+    def decorator(timeout=PykronManager.TIMEOUT_DEFAULT):
+        def wrapper(foo):
+            def f(*args, **kwargs):
+                task = Task(target=foo,
+                            args=args,
+                            timeout=timeout,
+                            parent_id=threading.get_native_id())
+                return PykronManager.getInstance().createRequest(task, timeout)
+            return f
+        return wrapper
+
+    def __init__(self, task, timeout):
+        self._task = task
+        self._timeout = timeout
+        self._callback = None
+        self._logger = PykronLogger.getInstance()
+        self._future = task.submit(timeout)
 
     @property
     def future(self):
         return self._future
 
-    def wait_for_completed(self, timeout=Task.TIMEOUT_DEFAULT, callback=None):
-        if callback:
-            self._callback = callback
-        try:
-            self.future.result(timeout=timeout)
-        except concurrent.futures.TimeoutError:
-            self._logger.log.error("Timeout occurred for wait_for_completed() after %.2fs for task %s() due to wait_for_completed timeout" % (timeout, self._task.name))
-        return self
+    @property
+    def task(self):
+        return self._task
 
-    def run(self):
-        res = self._task.run()
+    def on_completed(self, callback):
+        self._callback = callback
+
+    def wait_for_completed(self, timeout=None, callback=None):
+        if timeout is None:
+            timeout = self._timeout
+        self._task._timeout = timeout
+        self.on_completed(callback)
+        self.future.result()
         if self._callback:
             self._callback(self._task)
+        return self._task.retval
