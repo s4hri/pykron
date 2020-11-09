@@ -28,11 +28,11 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from pykron.core import AsyncRequest, Task, PykronLogger
-import pykron
+from pykron.core import AsyncRequest, Task
+from pykron.logging import PykronLogger
+
 import time
 import logging
-import os
 
 
 # You can assign to AsyncRequest.LOGGING_LEVEL any standard Python logging level
@@ -41,17 +41,19 @@ PykronLogger.LOGGING_LEVEL = logging.DEBUG
 # 2-levels nested function foo1->foo2->foo3
 @AsyncRequest.decorator()
 def foo1():
-    time.sleep(3)
-    foo2().wait_for_completed()
+    res = foo2().wait_for_completed()
+    print('foo2 = ', res)
+    time.sleep(5)
     return 1
 
 # A never-ending function
 @AsyncRequest.decorator()
 def foo2():
     while True:
+        print("foo2 I am alive!")
         time.sleep(1)
-        print("I am alive!")
         foo3()
+        time.sleep(2)
     return 2
 
 # A bugged function
@@ -63,7 +65,8 @@ def foo3():
 def on_completed(task):
     if task.status == Task.SUCCEED:
         print("Everything's fine")
-    elif task.status == Task.TIMEOUT:
+    else:
         print("Something goes wrong")
 
 foo1().wait_for_completed(callback=on_completed)
+print("FIN")
