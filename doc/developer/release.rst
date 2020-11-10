@@ -1,5 +1,5 @@
-Release Process
-===============
+Release Procedure
+=================
 
 - Update the release notes:
 
@@ -22,19 +22,9 @@ Release Process
 
   7. Update ``doc/news.rst``.
 
-- Delete the following from ``doc/_templates/layout.html``::
-
-    {% block document %}
-      {% include "dev_banner.html" %}
-      {{ super() }}
-    {% endblock %}
-
-- Toggle ``dev = True`` to ``dev = False`` in ``pykron/release.py``.
-
 - Commit changes::
 
-   git add pykron/release.py
-   git commit -m "Designate X.X release"
+   git commit -m "Release x.y.z"
 
 - Add the version number as a tag in git::
 
@@ -62,21 +52,12 @@ Release Process
    twine upload -s dist/*
 
 - Update documentation on the web:
-  The documentation is kept in a branch: s4hri/pyrkon gh-pages
+  The documentation is kept in a branch: s4hri/pykron gh-pages
 
- - Increase the version number
-
-  - Toggle ``dev = False`` to ``dev = True`` in ``pykron/release.py``.
-  - Update ``major`` and ``minor`` in ``pykron/release.py``.
-  - Append the following to ``doc/_templates/layout.html``::
-
-    {% block document %}
-      {% include "dev_banner.html" %}
-      {{ super() }}
-    {% endblock %}
+- Prepare new version number in pykron/__init__.py
 
  - Commit and push changes::
 
-    git add pykron/release.py doc/_templates/layout.html
-    git commit -m "Bump release version"
+    git add pykron/__init__.py
+    git commit -m "New release version"
     git push upstream master

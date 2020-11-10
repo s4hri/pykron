@@ -1,7 +1,7 @@
 .. _developer:
 
-Developer Guide
-***************
+Developer Guidelines and Procedures
+***********************************
 
 .. toctree::
    :maxdepth: 2

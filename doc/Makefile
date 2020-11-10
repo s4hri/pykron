@@ -47,7 +47,7 @@ dist: html
 	(cd ${BUILDDIR}/dist && tar czf ../dist.tar.gz .)
 
 html:
-	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) ${BUILDDIR}/html
+	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) ${BUILDDIR}/docs
 	@echo
 	@echo "Build finished. The HTML pages are in build/html."
 
