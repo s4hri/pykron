@@ -33,7 +33,7 @@ from pykron.logging import PykronLogger
 
 import time
 import logging
-
+import threading
 
 # You can assign to AsyncRequest.LOGGING_LEVEL any standard Python logging level
 PykronLogger.LOGGING_LEVEL = logging.DEBUG
@@ -42,15 +42,15 @@ PykronLogger.LOGGING_LEVEL = logging.DEBUG
 @AsyncRequest.decorator()
 def foo1():
     res = foo2().wait_for_completed()
-    print('foo2 = ', res)
     time.sleep(5)
+    print('foo2 = ', res)
     return 1
 
 # A never-ending function
 @AsyncRequest.decorator()
 def foo2():
     while True:
-        print("foo2 I am alive!")
+        print("foo2 I am alive! ", threading.current_thread().ident)
         time.sleep(1)
         foo3()
         time.sleep(2)
