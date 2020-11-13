@@ -1,10 +1,15 @@
 .. _contents:
 
-PyKron - asynchronous calls library
+Pykron - asynchronous calls library
 ===================================
 
-PyKron is a open-source package that let you easily transform any Python
+Pykron is a open-source package that let you easily transform any Python
 function in an asynchronous call.
+
+Getting Started
+---------------
+
+If you are new to Pykron you can check the :doc:`tutorial. <tutorial>`
 
 License
 -------
@@ -29,6 +34,7 @@ Documentation
    tutorial
    reference/index
    developer/index
+   release/index
    news
    citing
    bibliography
