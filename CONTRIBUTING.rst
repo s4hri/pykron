@@ -165,10 +165,7 @@ Once you've fixed all merge conflicts, do::
 
 .. note::
 
-   Advanced Git users are encouraged to `rebase instead of merge
-   <https://networkx.org/documentation/stable/developer/gitwash/development_workflow.html#rebase-on-trunk>`__,
-   but we squash and merge most PRs either way.
-
+   Advanced Git users are encouraged to rebase instead of merge
 
 Guidelines
 ----------
@@ -177,9 +174,7 @@ Guidelines
 * All code should be documented, to the same
   `standard <https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard>`_
   as NumPy and SciPy.
-* All changes are reviewed.  Ask on the
-  `mailing list <http://groups.google.com/group/networkx-discuss>`_ if
-  you get no response to your pull request.
+* All changes are reviewed.
 * Default dependencies are listed in ``requirements/default.txt`` and extra
   (if ever needed) dependencies will be listed in ``requirements/extra.txt``.
 * Use the following import conventions::
