@@ -28,19 +28,21 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from pykron.core import AsyncRequest, PykronLogger
+from pykron.core import Pykron, PykronLogger
 PykronLogger.LOGGING_SETTINGS = PykronLogger.LOGGING_SETTINGS_JSON
 
 import time
 
-@AsyncRequest.decorator(timeout=120)
+app = Pykron()
+
+@app.AsyncRequest(timeout=120)
 def fun1():
     logger.log.debug("Fun 1 reporting in")
     time.sleep(1)
     logger.log.debug("Fun 1 reporting out")
     time.sleep(1)
 
-@AsyncRequest.decorator(timeout=120)
+@app.AsyncRequest(timeout=120)
 def fun2():
     logger.log.debug("Fun 2 reporting in")
     time.sleep(1)
@@ -48,7 +50,7 @@ def fun2():
     logger.log.debug("Fun 2 reporting out")
     time.sleep(1)
 
-@AsyncRequest.decorator(timeout=120)
+@app.AsyncRequest(timeout=120)
 def fun3():
     logger.log.debug("Fun 3 reporting in")
     time.sleep(1)
@@ -56,7 +58,7 @@ def fun3():
     logger.log.debug("Fun 3 reporting out")
     time.sleep(1)
 
-@AsyncRequest.decorator(timeout=120)
+@app.AsyncRequest(timeout=120)
 def fun4():
     logger.log.debug("Fun 4 reporting in")
     time.sleep(1)
@@ -68,3 +70,5 @@ def fun4():
 logger = PykronLogger.getInstance()
 fun4()
 time.sleep(12)
+
+app.close()
