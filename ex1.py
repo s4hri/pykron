@@ -28,20 +28,22 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from pykron.core import AsyncRequest, PykronManager
-from pykron.logging import PykronLogger
+from pykron.core import Pykron
 
 import pykron
 import time
 import logging
 import os
 
+
+app = Pykron()
+
 # Specifying a AsyncRequest.LOGGING_PATH will produce a logfile instead of stream
-PykronLogger.LOGGING_PATH = '.'
+app.logger.LOGGING_PATH = '.'
 
 # Decorating any Python function with AsyncRequest.decorator you will be able to
 # parallelize its execution thanks to ThreadPoolExecutor
-@AsyncRequest.decorator()
+@app.AsyncRequest()
 def like(msg):
     print("I like " + msg)
     time.sleep(2)
@@ -49,6 +51,6 @@ def like(msg):
 
 a = like("strawberries")
 b = like("bananas")
-PykronManager.join([a,b])
-
+app.join([a,b])
 c = like("mangos").wait_for_completed()
+app.close()
