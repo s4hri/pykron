@@ -1,0 +1,391 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Contributor Guide &#8212; Pykron 0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/pydoctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Release Procedure" href="release.html" />
+    <link rel="prev" title="Developer Guidelines and Procedures" href="index.html" />
+    <link rel="shortcut icon" type="image/png" href="../_static/py.png" />
+    
+    <script type="text/javascript" src="../_static/copybutton.js"></script>
+    
+     
+
+  </head><body>  
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="release.html" title="Release Procedure"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Developer Guidelines and Procedures"
+             accesskey="P">previous</a> |</li>
+    <li><img src="../_static/py.png" alt=""
+             style="vertical-align: middle; margin-top: -1px"/></li>
+    <li><a href="https://www.python.org/">Python</a> &#187;</li>
+    
+    <a href="../index.html">Pykron 0.1 documentation</a> &#187;
+    
+
+          <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Developer Guidelines and Procedures</a> &#187;</li>
+    <li class="right">
+        
+
+    <div class="inline-search" style="display: none" role="search">
+        <form class="inline-search" action="../search.html" method="get">
+          <input placeholder="Quick search" type="text" name="q" />
+          <input type="submit" value="Go" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+    </div>
+    <script type="text/javascript">$('.inline-search').show(0);</script>
+         |
+    </li>
+
+      </ul>
+    </div>    
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="contributor-guide">
+<span id="id1"></span><h1>Contributor Guide<a class="headerlink" href="#contributor-guide" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="pykron-development-workflow">
+<h2>Pykron Development Workflow<a class="headerlink" href="#pykron-development-workflow" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic">
+<li><p>Create a local copy</p>
+<ul>
+<li><p>For the first-time contributor, here are the steps to create a copy of Pykron repository and submit pull requests</p></li>
+<li><p>Go to <a class="reference external" href="https://github.com/s4hri/pykron">https://github.com/s4hri/pykron</a> and click the
+“fork” button to create your own copy of the project.</p></li>
+<li><p>Clone the project to your local computer:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">git</span><span class="nd">@github</span><span class="o">.</span><span class="n">com</span><span class="p">:</span><span class="n">your</span><span class="o">-</span><span class="n">username</span><span class="o">/</span><span class="n">pykron</span><span class="o">.</span><span class="n">git</span>
+</pre></div>
+</div>
+</li>
+<li><p>Navigate to the folder pykron and add the upstream repository for pull requests:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">remote</span> <span class="n">add</span> <span class="n">upstream</span> <span class="n">git</span><span class="nd">@github</span><span class="o">.</span><span class="n">com</span><span class="p">:</span><span class="n">s4hri</span><span class="o">/</span><span class="n">pykron</span><span class="o">.</span><span class="n">git</span>
+</pre></div>
+</div>
+</li>
+<li><p>Now, you have remote repositories named:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">upstream</span></code>, which refers to the official <code class="docutils literal notranslate"><span class="pre">pykron</span></code> repository</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">origin</span></code>, which refers to your personal fork</p></li>
+</ul>
+</li>
+<li><p>Next, you need to set up your build environment.
+Here are instructions for using pip:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">venv</span></code> (pip based)</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a virtualenv named ``pykron-dev`` that lives in the directory of</span>
+<span class="c1"># the same name</span>
+<span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">venv</span> <span class="n">pykron</span><span class="o">-</span><span class="n">dev</span>
+<span class="c1"># or if your python 3.X binary is python3:</span>
+<span class="n">python3</span> <span class="o">-</span><span class="n">m</span> <span class="n">venv</span> <span class="n">pykron</span><span class="o">-</span><span class="n">dev</span>
+<span class="c1"># Activate it</span>
+<span class="n">source</span> <span class="n">pykron</span><span class="o">-</span><span class="n">dev</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">activate</span>
+<span class="c1"># Build and install pykron from source</span>
+<span class="c1"># Please make sure that you are still in pykron repository main directory</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="o">.</span>
+<span class="c1"># Test your installation</span>
+<span class="n">PYTHONPATH</span><span class="o">=.</span> <span class="n">pytest</span> <span class="n">pykron</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Develop your contribution:</p>
+<ul>
+<li><p>Pull the latest changes from upstream:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">checkout</span> <span class="n">master</span>
+<span class="n">git</span> <span class="n">pull</span> <span class="n">upstream</span> <span class="n">master</span>
+</pre></div>
+</div>
+</li>
+<li><p>Create a branch for the feature you want to work on. Since the
+branch name will appear in the merge message, use a sensible name
+such as ‘bugfix-for-issue-1480’:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">checkout</span> <span class="o">-</span><span class="n">b</span> <span class="n">bugfix</span><span class="o">-</span><span class="k">for</span><span class="o">-</span><span class="n">issue</span><span class="o">-</span><span class="mi">1480</span>
+</pre></div>
+</div>
+</li>
+<li><p>Commit locally as you progress (<code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">add</span></code> and <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">commit</span></code>)</p></li>
+</ul>
+</li>
+<li><p>Test your contribution:</p>
+<ul>
+<li><p>Run the test suite locally to see if the modifications alter any
+required functionalities:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">PYTHONPATH</span><span class="o">=.</span> <span class="n">pytest</span> <span class="n">pykron</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+<li><p>Submit your contribution:</p>
+<ul>
+<li><p>Push your changes back to your fork on GitHub:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">push</span> <span class="n">origin</span> <span class="n">bugfix</span><span class="o">-</span><span class="k">for</span><span class="o">-</span><span class="n">issue</span><span class="o">-</span><span class="mi">1480</span>
+</pre></div>
+</div>
+</li>
+<li><p>Go to GitHub. The new branch will show up with a green Pull Request
+button—click it.</p></li>
+<li><p>Add a short description when prompted.</p></li>
+</ul>
+</li>
+<li><p>Review process:</p>
+<ul class="simple">
+<li><p>Reviewers (the other developers and interested community members) will
+write inline and/or general comments on your Pull Request (PR) to help
+you improve its implementation, documentation, and style.  Every single
+developer working on the project has their code reviewed, and we’ve come
+to see it as friendly conversation from which we all learn and the
+overall code quality benefits.  Therefore, please don’t let the review
+discourage you from contributing: its only aim is to improve the quality
+of project, not to criticize (we are, after all, very grateful for the
+time you’re donating!).</p></li>
+<li><p>To update your pull request, make your changes on your local repository
+and commit. As soon as those changes are pushed up (to the same branch as
+before) the pull request will update automatically.</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If the PR closes an issue, make sure that GitHub knows to automatically
+close the issue when the PR is merged.  For example, if the PR closes
+issue number 1480, you could use the phrase “Fixes #1480” in the PR
+description or commit message.</p>
+</div>
+</li>
+<li><p>Document changes</p>
+<p>If your change introduces any API modifications, please update
+<code class="docutils literal notranslate"><span class="pre">doc/release/release_dev.rst</span></code>.</p>
+<p>If your change introduces a deprecation, add a reminder to
+<code class="docutils literal notranslate"><span class="pre">doc/developer/deprecations.rst</span></code> for the team to remove the
+deprecated functionality in the future.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>To reviewers: make sure the merge message has a brief description of the
+change(s) and if the PR closes an issue add, for example, “Closes #123”
+where 123 is the issue number.</p>
+</div>
+</li>
+</ol>
+</div>
+<div class="section" id="divergence-from-upstream-master">
+<h2>Divergence from <code class="docutils literal notranslate"><span class="pre">upstream</span> <span class="pre">master</span></code><a class="headerlink" href="#divergence-from-upstream-master" title="Permalink to this headline">¶</a></h2>
+<p>If GitHub indicates that the branch of your Pull Request can no longer
+be merged automatically, merge the master branch into yours:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">fetch</span> <span class="n">upstream</span> <span class="n">master</span>
+<span class="n">git</span> <span class="n">merge</span> <span class="n">upstream</span><span class="o">/</span><span class="n">master</span>
+</pre></div>
+</div>
+<p>If any conflicts occur, they need to be fixed before continuing.  See
+which files are in conflict using:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">status</span>
+</pre></div>
+</div>
+<p>Which displays a message like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Unmerged</span> <span class="n">paths</span><span class="p">:</span>
+  <span class="p">(</span><span class="n">use</span> <span class="s2">&quot;git add &lt;file&gt;...&quot;</span> <span class="n">to</span> <span class="n">mark</span> <span class="n">resolution</span><span class="p">)</span>
+
+  <span class="n">both</span> <span class="n">modified</span><span class="p">:</span>   <span class="n">file_with_conflict</span><span class="o">.</span><span class="n">txt</span>
+</pre></div>
+</div>
+<p>Inside the conflicted file, you’ll find sections like these:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;&lt;&lt;&lt;&lt;&lt;&lt;</span> <span class="n">HEAD</span>
+<span class="n">The</span> <span class="n">way</span> <span class="n">the</span> <span class="n">text</span> <span class="n">looks</span> <span class="ow">in</span> <span class="n">your</span> <span class="n">branch</span>
+<span class="o">=======</span>
+<span class="n">The</span> <span class="n">way</span> <span class="n">the</span> <span class="n">text</span> <span class="n">looks</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">master</span> <span class="n">branch</span>
+<span class="o">&gt;&gt;&gt;&gt;&gt;&gt;&gt;</span> <span class="n">master</span>
+</pre></div>
+</div>
+<p>Choose one version of the text that should be kept, and delete the
+rest:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">The</span> <span class="n">way</span> <span class="n">the</span> <span class="n">text</span> <span class="n">looks</span> <span class="ow">in</span> <span class="n">your</span> <span class="n">branch</span>
+</pre></div>
+</div>
+<p>Now, add the fixed file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">add</span> <span class="n">file_with_conflict</span><span class="o">.</span><span class="n">txt</span>
+</pre></div>
+</div>
+<p>Once you’ve fixed all merge conflicts, do:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">commit</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Advanced Git users are encouraged to rebase instead of merge</p>
+</div>
+</div>
+<div class="section" id="guidelines">
+<h2>Guidelines<a class="headerlink" href="#guidelines" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p>All new code functionality should have tests.</p></li>
+<li><p>All code should be documented, to the same
+<a class="reference external" href="https://numpydoc.readthedocs.io/en/latest/format.html#docstring-standard">standard</a>
+as NumPy and SciPy.</p></li>
+<li><p>All changes are reviewed.</p></li>
+<li><p>Default dependencies are listed in <code class="docutils literal notranslate"><span class="pre">requirements/default.txt</span></code> and extra
+(if ever needed) dependencies will be listed in <code class="docutils literal notranslate"><span class="pre">requirements/extra.txt</span></code>.</p></li>
+<li><p>Use the following import conventions:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pykron.core</span> <span class="k">import</span> <span class="n">AsyncRequest</span>
+<span class="kn">from</span> <span class="nn">pykron.logging</span> <span class="k">import</span> <span class="n">PykronLogger</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+<div class="section" id="testing">
+<h2>Testing<a class="headerlink" href="#testing" title="Permalink to this headline">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">pykron</span></code> has a basic test suite, which must be passed before
+making a pull request to ensure all modifications conform to
+the basic requirements of what pykron offers in terms of
+functionality.</p>
+<p>We make use of the <a class="reference external" href="https://docs.pytest.org/en/latest/">pytest</a>
+testing framework, with tests located in <code class="docutils literal notranslate"><span class="pre">pykron/tests</span></code> subdirectories.</p>
+<p>To run all tests:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ PYTHONPATH=. pytest pykron
+</pre></div>
+</div>
+</div>
+<div class="section" id="bugs">
+<h2>Bugs<a class="headerlink" href="#bugs" title="Permalink to this headline">¶</a></h2>
+<p>Please <a class="reference external" href="https://github.com/s4hri/pykron/issues">report bugs on GitHub</a>.</p>
+</div>
+<div class="section" id="thanks">
+<h2>Thanks<a class="headerlink" href="#thanks" title="Permalink to this headline">¶</a></h2>
+<p>This guide is heavily based on the beautiful step-by-step _CONTRIBUTING.rst by networkx/networkx project on GitHub.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Contributor Guide</a><ul>
+<li><a class="reference internal" href="#pykron-development-workflow">Pykron Development Workflow</a></li>
+<li><a class="reference internal" href="#divergence-from-upstream-master">Divergence from <code class="docutils literal notranslate"><span class="pre">upstream</span> <span class="pre">master</span></code></a></li>
+<li><a class="reference internal" href="#guidelines">Guidelines</a></li>
+<li><a class="reference internal" href="#testing">Testing</a></li>
+<li><a class="reference internal" href="#bugs">Bugs</a></li>
+<li><a class="reference internal" href="#thanks">Thanks</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Developer Guidelines and Procedures</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="release.html"
+                        title="next chapter">Release Procedure</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/developer/contribute.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>  
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="release.html" title="Release Procedure"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Developer Guidelines and Procedures"
+             >previous</a> |</li>
+    <li><img src="../_static/py.png" alt=""
+             style="vertical-align: middle; margin-top: -1px"/></li>
+    <li><a href="https://www.python.org/">Python</a> &#187;</li>
+    
+    <a href="../index.html">Pykron 0.1 documentation</a> &#187;
+    
+
+          <li class="nav-item nav-item-1"><a href="index.html" >Developer Guidelines and Procedures</a> &#187;</li>
+    <li class="right">
+        
+
+    <div class="inline-search" style="display: none" role="search">
+        <form class="inline-search" action="../search.html" method="get">
+          <input placeholder="Quick search" type="text" name="q" />
+          <input type="submit" value="Go" />
+          <input type="hidden" name="check_keywords" value="yes" />
+          <input type="hidden" name="area" value="default" />
+        </form>
+    </div>
+    <script type="text/javascript">$('.inline-search').show(0);</script>
+         |
+    </li>
+
+      </ul>
+    </div>  
+    <div class="footer">
+    &copy; <a href="../copyright.html">Copyright</a> 2020, Davide De Tommaso, Adam Wojciech Lukomski.
+    <br />
+    This page is licensed under the Python Software Foundation License Version 2.
+    <br />
+    Examples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License.
+    <br />
+    See <a href="">History and License</a> for more information.
+    <br /><br />
+
+    The Python Software Foundation is a non-profit corporation.
+<a href="https://www.python.org/psf/donations/">Please donate.</a>
+<br />
+    <br />
+
+    Last updated on None.
+    
+    <br />
+
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.0.3.
+    </div>
+
+  </body>
+</html>
