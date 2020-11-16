@@ -17,4 +17,5 @@ as extensions to the MAJOR.MINOR.PATCH format.
    :maxdepth: 2
 
    release_dev
+   release_0.14
    release_0.13
