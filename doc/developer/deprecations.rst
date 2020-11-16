@@ -37,6 +37,11 @@ different procedure upon justification (like when we can't detect the change,
 or it involves moving or deleting an entire function for example).
 
 Version 0.13
-~~~~~~~~~~~
+~~~~~~~~~~~~
+
+* In ``aaa/aab.py`` remove ``aab`` and related tests.
+
+Version 0.14
+~~~~~~~~~~~~
 
 * In ``aaa/aab.py`` remove ``aab`` and related tests.
