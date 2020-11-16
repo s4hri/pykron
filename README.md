@@ -1,5 +1,7 @@
 # PyKron
 
+[![Build Status](https://travis-ci.org/s4hri/pykron.svg?branch=master)](https://travis-ci.org/s4hri/pykron)
+
 PyKron is a open-source package that let you easily transform any Python
 function in an asynchronous call.
 
