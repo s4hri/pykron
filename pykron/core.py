@@ -163,7 +163,7 @@ class Task:
             self._exception = e
             self._status = Task.FAILED
             self._logger.log.error("%s: %s" % (self.name, e))
-        self._logger.log.debug("%s: Task completed! Status: %s, Duration: %.2f" % (self.name, self.status, self.duration))
+        self._logger.log.debug("%s: Task completed! Status: %s, Duration: %.2f [Task id: T%d]" % (self.name, self.status, self.duration, self._task_id))
 
     def run(self, future):
         self._future = future
