@@ -18,11 +18,11 @@
 # -- Project information -----------------------------------------------------
 
 project = 'Pykron'
-copyright = '2020, Davide De Tommaso, Adam Wojciech Lukomski'
+copyright = '2020, Social Cognition in Human-Robot Interaction'
 author = 'Davide De Tommaso, Adam Wojciech Lukomski'
 
 # The full version, including alpha/beta/rc tags
-release = '0.1'
+release = '0.14'
 
 
 # -- General configuration ---------------------------------------------------
