@@ -7,3 +7,7 @@ You can run the tests using:
 PYTHONPATH=. pytest pykron
 ```
 
+or just:
+```
+python -m pytest .
+```
