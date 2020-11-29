@@ -203,7 +203,11 @@ class Pykron:
             req.wait_for_completed()
 
         for req in requests:
-            return_values.append(req.future.result())
+            try:
+                return_values.append(req.future.result())
+            except:
+                return_values.append(None)
+
 
         return return_values
 
@@ -330,7 +334,6 @@ class AsyncRequest:
         if not self.future.done():
             self._logger.log.error("%s: Timeout occurred after %.2fs" % (self.task.name, self.timeout))
             self.future.set_exception(TimeoutError)
-        print("timeout finish")
 
     def wait_for_completed(self, timeout=Pykron.TIMEOUT_DEFAULT, callback=None):
         if timeout is None:
