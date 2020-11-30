@@ -231,7 +231,11 @@ class Pykron:
         return self._logger
 
     def worker(self):
-        self.loop.run_forever()
+        try:
+            self.loop.run_forever()
+        finally:
+            self.loop.run_until_complete(self.loop.shutdown_asyncgens())
+            self.loop.close()
 
     def close(self):
         executor = concurrent.futures.ThreadPoolExecutor()
@@ -272,6 +276,7 @@ class AsyncRequest:
     def __init__(self, loop, task, timeout):
         self._task = task
         self._timeout = timeout
+        self._loop = loop
         self._callback = None
         self._timeout_handler_id = None
         self._logger = PykronLogger.getInstance()
@@ -314,8 +319,10 @@ class AsyncRequest:
     def cancel(self):
         self._logger.log.error("%s: Task cancelling ... [Task id: T%d, Parent id: T%d]" % (self.task.name, self.task.task_id, self.task.parent_id))
         self.executor.shutdown(wait=False)
+        self.stop_timeout_handler()
         self._stop_thread(self.req_id, SystemExit)
-        self.future.cancel()
+        executor = concurrent.futures.ThreadPoolExecutor()
+        self._loop.run_in_executor(executor, self.future.cancel)
 
     def on_completed(self, callback):
         self._callback = callback
@@ -326,7 +333,8 @@ class AsyncRequest:
     def stop_timeout_handler(self):
         self._executor.shutdown(wait=False)
         self._stop_thread(self._timeout_handler_id, SystemExit)
-        self._future_timeout.cancel()
+        executor = concurrent.futures.ThreadPoolExecutor()
+        self._loop.run_in_executor(executor, self._future_timeout.cancel)
 
     def timeout_handler(self, timeout):
         self._timeout_handler_id = threading.current_thread().ident
