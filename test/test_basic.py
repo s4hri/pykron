@@ -78,7 +78,7 @@ class TestBasic:
         app.close()
         time.sleep(1)
         assert app.loop.is_running() == False
-    """
+
     def test_task_timeout(self):
         ''' tests if Task.TIMEOUT is properly used
         '''
@@ -93,7 +93,6 @@ class TestBasic:
         time.sleep(1)
         assert app.loop.is_running() == False
 
-    """
     def test_task_wait_for_completed_and_callback(self):
         ''' test wait_for_completed together with a callback
         '''
@@ -139,6 +138,20 @@ class TestBasic:
         app.close()
         time.sleep(1)
         assert app.loop.is_running() == False
+
+    def test_wait_for_completed_timeout(self):
+        ''' test wait_for_completed together with a callback
+        '''
+        app = Pykron()
+        @app.AsyncRequest(timeout=10.0)
+        def inner_fun():
+            time.sleep(1)
+            return 'test'
+        request = inner_fun()
+        request.wait_for_completed(timeout=0.5)
+        time.sleep(2)
+        app.close()
+        assert request.task.status == Task.TIMEOUT
 
     def test_same_time(self):
         ''' test if 5 functions can be run at the same time (without join)

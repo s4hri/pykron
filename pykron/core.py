@@ -278,8 +278,8 @@ class AsyncRequest:
         self._logger = PykronLogger.getInstance()
         self._completed = threading.Event()
         self._executor = ThreadPoolExecutor(max_workers=2)
-        self._future = loop.run_in_executor(self._executor, task.run)
         self._future_timer = loop.run_in_executor(self._executor, loop.call_later, timeout, self.timeout_cb)
+        self._future = loop.run_in_executor(self._executor, task.run)
 
     @property
     def executor(self):
@@ -346,4 +346,5 @@ class AsyncRequest:
             return self._task.retval
         else:
             self._logger.log.error("%s: Timeout occurred on wait_for_completed after %.2fs" % (self.task.name, timeout))
+            self.timeout_cb()
             return None
