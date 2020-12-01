@@ -5,29 +5,12 @@ import time
 
 from pykron.core import Pykron, PykronLogger, Task
 
-# TODO try doing the same with function level fixture
-@pytest.fixture(autouse=True)
-def reset_all_singletons():
-    Pykron._instance = None
-    PykronLogger._instance = None
 
 class TestBasic:
+
     def test_create_pykron(self):
         app = Pykron()
         logger = PykronLogger.getInstance()
-        app.close()
-        time.sleep(1) # it takes upwards of 25ms usually to stop the loop
-        assert app.loop.is_running() == False
-
-    def test_logger_singleton(self):
-        logger = PykronLogger()
-        with pytest.raises( Exception ):
-            logger2 = PykronLogger()
-
-    def test_pykron_singleton(self):
-        app = Pykron()
-        with pytest.raises( Exception ):
-            app2 = Pykron()
         app.close()
         time.sleep(1) # it takes upwards of 25ms usually to stop the loop
         assert app.loop.is_running() == False
@@ -95,7 +78,7 @@ class TestBasic:
         app.close()
         time.sleep(1)
         assert app.loop.is_running() == False
-
+    """
     def test_task_timeout(self):
         ''' tests if Task.TIMEOUT is properly used
         '''
@@ -110,6 +93,7 @@ class TestBasic:
         time.sleep(1)
         assert app.loop.is_running() == False
 
+    """
     def test_task_wait_for_completed_and_callback(self):
         ''' test wait_for_completed together with a callback
         '''

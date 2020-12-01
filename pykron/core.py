@@ -51,7 +51,6 @@ import atexit
 
 atexit.unregister(concurrent.futures.thread._python_exit)
 
-
 class Task:
 
     FAILED     = 'FAILED'
@@ -213,34 +212,31 @@ class Pykron:
 
     def __init__(self, logging_level=logging.DEBUG):
         if Pykron._instance != None:
-            raise Exception("This class is a singleton!")
+            Pykron.getInstance()
         else:
             Pykron._instance = self
-        self._logger = PykronLogger.getInstance()
-        self._logger.LOGGING_LEVEL = logging_level
+            self._logger = PykronLogger.getInstance()
+            self._logger.LOGGING_LEVEL = logging_level
 
-        self._requests = {}
-        self._parents = {}
-        self._futures = {}
-        self._task_executions = {}
-        self.loop = asyncio.new_event_loop()
-        threading.Thread(target=self.worker).start()
+            self._requests = {}
+            self._parents = {}
+            self._futures = {}
+            self._task_executions = {}
+            self.loop = asyncio.get_event_loop()
+            self._worker_thread = threading.Thread(target=self.worker)
+            self._worker_thread.start()
 
     @property
     def logger(self):
         return self._logger
 
     def worker(self):
-        try:
-            self.loop.run_forever()
-        finally:
-            self.loop.run_until_complete(self.loop.shutdown_asyncgens())
-            self.loop.close()
+        self.loop.run_forever()
 
     def close(self):
-        executor = concurrent.futures.ThreadPoolExecutor()
-        self.loop.run_in_executor(executor, print)
-        self.loop.stop()
+        self.loop.call_soon_threadsafe(self.loop.stop)
+        self._worker_thread.join()
+        Pykron._instance = None
 
     def createRequest(self, task, timeout):
         req = AsyncRequest(self.loop, task, timeout)
@@ -281,9 +277,9 @@ class AsyncRequest:
         self._timeout_handler_id = None
         self._logger = PykronLogger.getInstance()
         self._completed = threading.Event()
-        self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
+        self._executor = ThreadPoolExecutor(max_workers=2)
         self._future = loop.run_in_executor(self._executor, task.run)
-        self._future_timeout = loop.run_in_executor(self._executor, self.timeout_handler, timeout)
+        self._future_timer = loop.run_in_executor(self._executor, loop.call_later, timeout, self.timeout_cb)
 
     @property
     def executor(self):
@@ -321,8 +317,7 @@ class AsyncRequest:
         self.executor.shutdown(wait=False)
         self.stop_timeout_handler()
         self._stop_thread(self.req_id, SystemExit)
-        executor = concurrent.futures.ThreadPoolExecutor()
-        self._loop.run_in_executor(executor, self.future.cancel)
+        self._loop.call_soon_threadsafe(self.future.cancel)
 
     def on_completed(self, callback):
         self._callback = callback
@@ -331,14 +326,10 @@ class AsyncRequest:
         self._completed.set()
 
     def stop_timeout_handler(self):
-        self._executor.shutdown(wait=False)
-        self._stop_thread(self._timeout_handler_id, SystemExit)
-        executor = concurrent.futures.ThreadPoolExecutor()
-        self._loop.run_in_executor(executor, self._future_timeout.cancel)
+        timeout_handler = self._future_timer.result()
+        timeout_handler.cancel()
 
-    def timeout_handler(self, timeout):
-        self._timeout_handler_id = threading.current_thread().ident
-        time.sleep(timeout)
+    def timeout_cb(self):
         if not self.future.done():
             self._logger.log.error("%s: Timeout occurred after %.2fs" % (self.task.name, self.timeout))
             self.future.set_exception(TimeoutError)

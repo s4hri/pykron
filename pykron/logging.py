@@ -39,7 +39,7 @@ import datetime
 
 class PykronLogger:
     ''' logging wrapper for quick setup
-    
+
     creates a singleton _instance and adds basic handlers
     '''
 
@@ -64,7 +64,7 @@ class PykronLogger:
 
     def __init__(self):
         if PykronLogger._instance != None:
-            raise Exception("This class is a singleton!")
+            PykronLogger.getInstance()
         else:
             PykronLogger._instance = self
             # choose fileconfig > dictconfig > basic
