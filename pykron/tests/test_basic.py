@@ -76,25 +76,28 @@ class TestBasic:
         time.sleep(1)
         assert app.loop.is_running() == False
 
-    #def test_task_cancelled(self):
-        #''' tests if Task.RUNNING is properly used
-        #'''
-        #app = Pykron()
-        #@app.AsyncRequest(timeout=10)
-        #def level0_fun():
-            #for i in range(0,90):
-                #time.sleep(0.1)
-        #request = level0_fun()
-        #time.sleep(0.1) # to avoid Task.IDLE
-        #request.cancel()
-        #time.sleep(0.1) # wait for it
-        #assert request.task.status == Task.CANCELLED
-        #app.close()
-        #time.sleep(1)
-        #assert app.loop.is_running() == False
-        
+
+    def test_task_cancelled(self):
+        ''' tests if Task.CANCELLED is properly used
+        this test is limited in functionality,
+        .cancel( ) requires specific conditions
+        '''
+        app = Pykron()
+        @app.AsyncRequest(timeout=10)
+        def level0_fun():
+            for i in range(0,90):
+                time.sleep(0.1)
+        request = level0_fun()
+        time.sleep(0.1) # to avoid Task.IDLE
+        request.cancel()
+        time.sleep(0.1) # wait for it
+        assert request.task.status == Task.CANCELLED
+        app.close()
+        time.sleep(1)
+        assert app.loop.is_running() == False
+
     def test_task_timeout(self):
-        ''' tests if Task.RUNNING is properly used
+        ''' tests if Task.TIMEOUT is properly used
         '''
         app = Pykron()
         @app.AsyncRequest(timeout=0.2)
@@ -119,6 +122,36 @@ class TestBasic:
             assert task.status == Task.SUCCEED
             #assert task.retval == 1 # TODO this fails !
         inner_empty_fun().wait_for_completed(callback=on_completed)
+        app.close()
+        time.sleep(1)
+        assert app.loop.is_running() == False
+
+    def test_return_value_through_future(self):
+        ''' see if the future properly stores a returned value
+        '''
+        app = Pykron()
+
+        @app.AsyncRequest(timeout=0.5)
+        def inner_fun():
+            time.sleep(0.1)
+            return 'test'
+        task = inner_fun()
+        time.sleep(0.3)
+        assert task.future.result() == 'test'
+        app.close()
+        time.sleep(1)
+        assert app.loop.is_running() == False
+
+    def test_return_value_wait_for_completed(self):
+        ''' test wait_for_completed together with a callback
+        '''
+        app = Pykron()
+        @app.AsyncRequest(timeout=0.5)
+        def inner_fun():
+            time.sleep(0.1)
+            return 'test'
+        val = inner_fun().wait_for_completed()
+        assert val == 'test'
         app.close()
         time.sleep(1)
         assert app.loop.is_running() == False
