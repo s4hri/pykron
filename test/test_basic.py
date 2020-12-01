@@ -139,3 +139,25 @@ class TestBasic:
         app.close()
         time.sleep(1)
         assert app.loop.is_running() == False
+
+    def test_same_time(self):
+        ''' test if 5 functions can be run at the same time (without join)
+        '''
+        app = Pykron()
+
+        @app.AsyncRequest(timeout=10)
+        def fun1(arg):
+            time.sleep(0.5)
+            return arg
+
+        args = ['a1','b2','c3','d4','e5']
+        requests = list()
+        for arg in args:
+            requests.append( (fun1(arg),arg) )
+
+        time.sleep(1) # to avoid Task.IDLE
+        for (request,arg) in requests:
+            assert request.future.result() == arg
+        app.close()
+        time.sleep(1)
+        assert app.loop.is_running() == False
