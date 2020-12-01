@@ -168,7 +168,7 @@ class Task:
         self._logger.log.debug("%s: Task starting ... [Task id: T%d, Parent id: T%d]" % (self.name, self._task_id, self.parent_id))
         self._status = Task.RUNNING
         self._start_ts = time.perf_counter()
-        self._target(*self._args)
+        return self._target(*self._args)
 
 class Pykron:
 
@@ -223,7 +223,7 @@ class Pykron:
         self._parents = {}
         self._futures = {}
         self._task_executions = {}
-        self.loop = asyncio.get_event_loop()
+        self.loop = asyncio.new_event_loop()
         threading.Thread(target=self.worker).start()
 
     @property
