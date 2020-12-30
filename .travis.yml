@@ -9,4 +9,6 @@ matrix:
           python: 3.8
 
 script:
-    - python -m pytest
+    - python -m unittest -v tests/test_basic.py
+    - python -m unittest -v tests/test_task_order.py
+    - python -m unittest -v tests/test_task_timeout.py

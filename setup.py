@@ -1,9 +1,10 @@
 """
 BSD 2-Clause License
 
-Copyright (c) 2020, Davide De Tommaso (dtmdvd@gmail.com)
+Copyright (c) 2020, Davide De Tommaso (davide.detommaso@iit.it),
+                    Adam Lukomski (adam.lukomski@iit.it),
                     Social Cognition in Human-Robot Interaction
-                    Istituto Italiano di Tecnologia (IIT)
+                    Istituto Italiano di Tecnologia, Genova
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -28,6 +29,7 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
+
 from setuptools import setup, find_packages
 from codecs import open
 from os import path
@@ -43,12 +45,12 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='pykron',
-    version='0.14',
+    version='0.15',
     description='Python module for managing asynchronous tasks',
     url='https://github.com/s4hri/pykron',
-    download_url='https://github.com/s4hri/pykron/archive/0.14.tar.gz',
+    download_url='https://github.com/s4hri/pykron/archive/0.15.tar.gz',
     author='Davide De Tommaso',
-    author_email='dtmdvd@gmail.com',
+    author_email='davide.detommaso@iit.it',
     install_requires=[],
     keywords=['multithreading'],
     packages=find_packages(),

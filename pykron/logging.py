@@ -1,9 +1,10 @@
 """
 BSD 2-Clause License
 
-Copyright (c) 2020, Davide De Tommaso (dtmdvd@gmail.com)
+Copyright (c) 2020, Davide De Tommaso (davide.detommaso@iit.it),
+                    Adam Lukomski (adam.lukomski@iit.it),
                     Social Cognition in Human-Robot Interaction
-                    Istituto Italiano di Tecnologia (IIT)
+                    Istituto Italiano di Tecnologia, Genova
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -27,6 +28,7 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
+
 
 import logging
 import logging.config

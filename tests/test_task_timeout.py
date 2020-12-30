@@ -1,9 +1,10 @@
 """
 BSD 2-Clause License
 
-Copyright (c) 2020, Davide De Tommaso (dtmdvd@gmail.com)
+Copyright (c) 2020, Davide De Tommaso (davide.detommaso@iit.it),
+                    Adam Lukomski (adam.lukomski@iit.it),
                     Social Cognition in Human-Robot Interaction
-                    Istituto Italiano di Tecnologia (IIT)
+                    Istituto Italiano di Tecnologia, Genova
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -28,29 +29,39 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from pykron.core import Pykron
 
-import pykron
+import unittest
 import time
-import logging
-import os
+from pykron.core import Pykron, PykronLogger, Task
 
+class TestTaskTimeout(unittest.TestCase):
 
-app = Pykron()
+    def test_task_timeout(self):
+        ''' tests if Task.TIMEOUT is properly used
+        '''
+        app = Pykron()
 
-# Specifying a AsyncRequest.LOGGING_PATH will produce a logfile instead of stream
-app.logger.LOGGING_PATH = '.'
+        @app.AsyncRequest(timeout=0.2)
+        def level0_fun():
+            time.sleep(2)
 
-# Decorating any Python function with AsyncRequest.decorator you will be able to
-# parallelize its execution thanks to ThreadPoolExecutor
-@app.AsyncRequest()
-def like(msg):
-    print("I like " + msg)
-    time.sleep(2)
-    return 1
+        request = level0_fun()
+        time.sleep(0.3) # this is not a wait_for_completed test, so brute-force it
+        self.assertEqual(request.task.status, Task.TIMEOUT)
+        app.close()
+        self.assertFalse(app.loop.is_running())
 
-a = like("strawberries")
-b = like("bananas")
-app.join([a,b])
-c = like("mangos").wait_for_completed()
-app.close()
+    def test_wait_for_completed_timeout(self):
+        ''' test wait_for_completed together with a callback
+        '''
+        app = Pykron()
+
+        @app.AsyncRequest(timeout=10.0)
+        def inner_fun():
+            time.sleep(20)
+            return 'test'
+
+        request = inner_fun()
+        request.wait_for_completed(timeout=1)
+        self.assertEqual(request.task.status, Task.TIMEOUT)
+        app.close()
