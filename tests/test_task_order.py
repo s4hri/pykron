@@ -32,13 +32,14 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import unittest
 import time
-from pykron.core import Pykron, PykronLogger, Task
+from pykron.core import Pykron, PykronLogger, Task, PykronTest
 
-class TestTaskOrder(unittest.TestCase):
+
+class TestTaskOrder(PykronTest):
 
     def test_1(self):
-        app = Pykron()
-        @app.AsyncRequest()
+
+        @Pykron.AsyncRequest()
         def like(msg):
             print("I like " + msg)
             time.sleep(0.1)
@@ -48,27 +49,24 @@ class TestTaskOrder(unittest.TestCase):
         b = like("bananas")
         self.assertEqual(a.task.status, Task.RUNNING)
         self.assertEqual(b.task.status, Task.RUNNING)
-        app.join([a,b])
+        Pykron.join([a,b])
         self.assertEqual(a.task.status, Task.SUCCEED)
         self.assertEqual(b.task.status, Task.SUCCEED)
         c = like("mangos")
         res = c.wait_for_completed()
         self.assertEqual(c.task.status, Task.SUCCEED)
         self.assertEqual(res, 1)
-        app.close()
 
     def test_2(self):
-        app = Pykron()
-
         # 2-levels nested function foo1->foo2->foo3
-        @app.AsyncRequest()
+        @Pykron.AsyncRequest()
         def foo1():
             res = foo2().wait_for_completed()
             time.sleep(5)
             return 1
 
         # A never-ending function
-        @app.AsyncRequest()
+        @Pykron.AsyncRequest()
         def foo2():
             while True:
                 print("I am alive! ")
@@ -78,7 +76,7 @@ class TestTaskOrder(unittest.TestCase):
             return 2
 
         # A bugged function
-        @app.AsyncRequest()
+        @Pykron.AsyncRequest()
         def foo3():
             return 1/0
 
@@ -94,4 +92,3 @@ class TestTaskOrder(unittest.TestCase):
         self.assertEqual(req.task.status, Task.RUNNING)
         req.wait_for_completed(callback=on_completed)
         self.assertEqual(req.task.status, Task.CANCELLED)
-        app.close()

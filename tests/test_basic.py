@@ -31,73 +31,53 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import unittest
 import time
-from pykron.core import Pykron, PykronLogger, Task
+from pykron.core import Pykron, PykronLogger, Task, PykronTest
 
-class TestBasic(unittest.TestCase):
-
-    def test_create_pykron(self):
-        app = Pykron()
-        logger = PykronLogger.getInstance()
-        app.close()
-        time.sleep(1) # it takes upwards of 25ms usually to stop the loop
-        self.assertFalse(app.loop.is_running())
+class TestBasic(PykronTest):
 
     def test_task_succeed(self):
         ''' tests storing a request and checking Task.SUCCEED status
         '''
-        app = Pykron()
-        @app.AsyncRequest(timeout=0.5)
+        @Pykron.AsyncRequest()
         def inner_empty_fun():
             time.sleep(0.1)
             return 1
+
         request = inner_empty_fun()
         time.sleep(1)
         self.assertEqual(request.task.status, Task.SUCCEED)
         self.assertEqual(request.task.retval, 1)
-        app.close()
-        time.sleep(1)
-        self.assertFalse(app.loop.is_running())
 
     def test_task_failed(self):
         ''' tests if a Task.FAILED is properly displayed after division by zero
         '''
-        app = Pykron()
-        @app.AsyncRequest(timeout=0.5)
+
+        @Pykron.AsyncRequest()
         def inner_empty_fun():
             return 1/0
 
         request = inner_empty_fun()
         time.sleep(0.2)
         self.assertEqual(request.task.status, Task.FAILED)
-        app.close()
-        time.sleep(1)
-        self.assertFalse(app.loop.is_running())
 
     def test_task_running(self):
         ''' tests if Task.RUNNING is properly used
         '''
-        app = Pykron()
-
-        @app.AsyncRequest(timeout=3)
+        @Pykron.AsyncRequest()
         def level0_fun():
             time.sleep(2)
 
         request = level0_fun()
         time.sleep(0.1) # to avoid Task.IDLE
         self.assertEqual(request.task.status, Task.RUNNING)
-        app.close()
-        time.sleep(1)
-        self.assertFalse(app.loop.is_running())
-
 
     def test_task_cancelled(self):
         ''' tests if Task.CANCELLED is properly used
         this test is limited in functionality,
         .cancel( ) requires specific conditions
         '''
-        app = Pykron()
 
-        @app.AsyncRequest(timeout=10)
+        @Pykron.AsyncRequest()
         def level0_fun():
             for i in range(0,90):
                 time.sleep(0.1)
@@ -107,16 +87,11 @@ class TestBasic(unittest.TestCase):
         request.cancel()
         time.sleep(0.1) # wait for it
         self.assertEqual(request.task.status, Task.CANCELLED)
-        app.close()
-        time.sleep(1)
-        self.assertFalse(app.loop.is_running())
 
     def test_task_wait_for_completed_and_callback(self):
         ''' test wait_for_completed together with a callback
         '''
-        app = Pykron()
-
-        @app.AsyncRequest(timeout=0.5)
+        @Pykron.AsyncRequest()
         def inner_empty_fun():
             time.sleep(0.1)
             return 1
@@ -126,16 +101,12 @@ class TestBasic(unittest.TestCase):
             self.assertEqual(task.retval, 1)
 
         inner_empty_fun().wait_for_completed(callback=on_completed)
-        app.close()
-        time.sleep(1)
-        self.assertFalse(app.loop.is_running())
 
     def test_return_value_through_future(self):
         ''' see if the future properly stores a returned value
         '''
-        app = Pykron()
 
-        @app.AsyncRequest(timeout=0.5)
+        @Pykron.AsyncRequest()
         def inner_fun():
             time.sleep(0.1)
             return 'test'
@@ -143,32 +114,22 @@ class TestBasic(unittest.TestCase):
         task = inner_fun()
         time.sleep(0.3)
         self.assertEqual(task.future.result(), 'test')
-        app.close()
-        time.sleep(1)
-        self.assertFalse(app.loop.is_running())
 
     def test_return_value_wait_for_completed(self):
         ''' test wait_for_completed together with a callback
         '''
-        app = Pykron()
-
-        @app.AsyncRequest(timeout=0.5)
+        @Pykron.AsyncRequest()
         def inner_fun():
             time.sleep(0.1)
             return 'test'
 
         val = inner_fun().wait_for_completed()
         self.assertEqual(val, 'test')
-        app.close()
-        time.sleep(1)
-        self.assertFalse(app.loop.is_running())
 
     def test_same_time(self):
         ''' test if 5 functions can be run at the same time (without join)
         '''
-        app = Pykron()
-
-        @app.AsyncRequest(timeout=10)
+        @Pykron.AsyncRequest()
         def fun1(arg):
             time.sleep(0.5)
             return arg
@@ -181,9 +142,6 @@ class TestBasic(unittest.TestCase):
         time.sleep(1) # to avoid Task.IDLE
         for (request,arg) in requests:
             self.assertEqual(request.future.result(), arg)
-        app.close()
-        time.sleep(1)
-        self.assertFalse(app.loop.is_running())
 
 if __name__ == '__main__':
     unittest.main()

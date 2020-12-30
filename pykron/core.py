@@ -44,6 +44,7 @@ import asyncio
 import logging
 import ctypes
 import inspect
+import unittest
 
 from pykron.logging import PykronLogger
 
@@ -177,16 +178,22 @@ class Pykron:
 
     @staticmethod
     def AsyncRequest(timeout=TIMEOUT_DEFAULT):
-        def wrapper(foo):
+        def wrapper(target):
             def f(*args, **kwargs):
                 parent_id = threading.current_thread().ident
-                task = Task(target=foo,
+                task = Task(target=target,
                             args=args,
                             parent_id=parent_id)
-
                 return Pykron.getInstance().createRequest(task, timeout)
             return f
         return wrapper
+
+    @staticmethod
+    def close():
+        app = Pykron.getInstance()
+        app.loop.call_soon_threadsafe(app.loop.stop)
+        app._worker_thread.join()
+        Pykron._instance = None
 
     @staticmethod
     def getInstance():
@@ -233,11 +240,6 @@ class Pykron:
 
     def worker(self):
         self.loop.run_forever()
-
-    def close(self):
-        self.loop.call_soon_threadsafe(self.loop.stop)
-        self._worker_thread.join()
-        Pykron._instance = None
 
     def createRequest(self, task, timeout):
         req = AsyncRequest(self.loop, task, timeout)
@@ -351,3 +353,14 @@ class AsyncRequest:
             self._completed.wait()
             self._logger.log.error("%s: Timeout occurred on wait_for_completed after %.2fs" % (self.task.name, timeout))
             return None
+
+class PykronTest(unittest.TestCase):
+
+    def setUp(self):
+        app = Pykron.getInstance()
+        self.assertTrue(app.loop.is_running())
+
+    def tearDown(self):
+        app = Pykron.getInstance()
+        app.close()
+        self.assertFalse(app.loop.is_running())

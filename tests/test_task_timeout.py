@@ -32,31 +32,28 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import unittest
 import time
-from pykron.core import Pykron, PykronLogger, Task
+from pykron.core import Pykron, PykronLogger, Task, PykronTest
 
-class TestTaskTimeout(unittest.TestCase):
+
+class TestTaskTimeout(PykronTest):
 
     def test_task_timeout(self):
         ''' tests if Task.TIMEOUT is properly used
         '''
-        app = Pykron()
 
-        @app.AsyncRequest(timeout=0.2)
+        @Pykron.AsyncRequest(timeout=0.2)
         def level0_fun():
             time.sleep(2)
 
         request = level0_fun()
         time.sleep(0.3) # this is not a wait_for_completed test, so brute-force it
         self.assertEqual(request.task.status, Task.TIMEOUT)
-        app.close()
-        self.assertFalse(app.loop.is_running())
 
     def test_wait_for_completed_timeout(self):
         ''' test wait_for_completed together with a callback
         '''
-        app = Pykron()
 
-        @app.AsyncRequest(timeout=10.0)
+        @Pykron.AsyncRequest(timeout=10.0)
         def inner_fun():
             time.sleep(20)
             return 'test'
@@ -64,4 +61,3 @@ class TestTaskTimeout(unittest.TestCase):
         request = inner_fun()
         request.wait_for_completed(timeout=1)
         self.assertEqual(request.task.status, Task.TIMEOUT)
-        app.close()
