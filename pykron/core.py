@@ -49,6 +49,10 @@ import atexit
 
 from pykron.logging import PykronLogger
 
+if sys.version_info > (3,7):
+    import cProfile, pstats, io
+    from pstats import SortKey
+
 atexit.unregister(concurrent.futures.thread._python_exit)
 
 class Task:
@@ -260,8 +264,6 @@ class Pykron:
             self._parents = {}
             self._futures = {}
             if profiler:
-                import cProfile, pstats, io
-                from pstats import SortKey
                 self._profiler = cProfile.Profile()
             else:
                 self._profiler = None
@@ -281,8 +283,11 @@ class Pykron:
         self.loop.run_forever()
         if self._profiler:
             self._profiler.disable()
+            s = io.StringIO()
             sortby = SortKey.CUMULATIVE
-            ps = pstats.Stats(self._profiler).sort_stats(sortby)
+            ps = pstats.Stats(self._profiler, stream=s).sort_stats(sortby)
+            ps.print_stats()
+            print(s.getvalue())
             ps.dump_stats("pykron.stats")
 
 
