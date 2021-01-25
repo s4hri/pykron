@@ -46,18 +46,14 @@ sys.path.append('..')
 from pykron.core import Pykron, Task, PykronLogger
 
 import time
-import logging
 import threading
 
-
-app = Pykron(logging_level=logging.DEBUG)
-logging = PykronLogger.getInstance()
+app = Pykron()
 
 @app.AsyncRequest()
 def foo1(t0):
     a = time.perf_counter()-t0
-    logging.log.debug(a)
-    #time.sleep(0.1)
+    app.logging.debug(a)
     return (a,time.perf_counter())
 
 
@@ -69,15 +65,8 @@ for i in range(0,100):
     time.sleep(0.1)
     storage.append(mytask.future.result()[0])
 
-    #val = foo1(t0).wait_for_completed()
-    #storage.append(val)
-
 for line in storage:
     print(line)
-
-
-
-
 
 
 # I like to leave some time to see if the cleanup fails

@@ -28,47 +28,27 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-from pykron.core import Pykron, PykronLogger
-PykronLogger.LOGGING_SETTINGS = PykronLogger.LOGGING_SETTINGS_JSON
 
+# manually cancelling a running task
+
+import sys
+sys.path.append('..')
+
+from pykron.core import Pykron, PykronLogger
 import time
 
 app = Pykron()
 
-@app.AsyncRequest(timeout=120)
-def fun1():
-    logger.log.debug("Fun 1 reporting in")
-    time.sleep(1)
-    logger.log.debug("Fun 1 reporting out")
-    time.sleep(1)
+@app.AsyncRequest(timeout=10)
+def level1_fun():
+    logger = PykronLogger.getInstance()
+    for i in range(0,90):
+        time.sleep(0.1)
+        logger.log.debug('I am still alive')
 
-@app.AsyncRequest(timeout=120)
-def fun2():
-    logger.log.debug("Fun 2 reporting in")
-    time.sleep(1)
-    fun1()
-    logger.log.debug("Fun 2 reporting out")
-    time.sleep(1)
-
-@app.AsyncRequest(timeout=120)
-def fun3():
-    logger.log.debug("Fun 3 reporting in")
-    time.sleep(1)
-    fun2()
-    logger.log.debug("Fun 3 reporting out")
-    time.sleep(1)
-
-@app.AsyncRequest(timeout=120)
-def fun4():
-    logger.log.debug("Fun 4 reporting in")
-    time.sleep(1)
-    fun3()
-    logger.log.debug("Fun 4 reporting out")
-    time.sleep(1)
-
-
-logger = PykronLogger.getInstance()
-fun4()
-time.sleep(12)
+request = level1_fun()
+time.sleep(1)
+request.cancel()
+time.sleep(1) # just wait for it
 
 app.close()

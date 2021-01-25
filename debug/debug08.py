@@ -29,14 +29,6 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-
-# what not to do - use empty function
-# race conditions may cause it not to finish right away
-# but the timeout will catch it
-
-# UPDATE: solved in d9c4fad
-
-
 import sys
 sys.path.append('..')
 
@@ -45,11 +37,9 @@ import time
 
 app = Pykron()
 
-@app.AsyncRequest(timeout=0.5)
+@app.AsyncRequest(timeout=0.001)
 def fun4():
     return 1
-
-logger = PykronLogger.getInstance()
 
 result = fun4().wait_for_completed()
 print('result',result)

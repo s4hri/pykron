@@ -28,34 +28,48 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-''' Example of using StringIO to hold JSON objects for future parsing '''
+import sys
+sys.path.append('..')
 
-
-from pykron.core import Pykron, PykronLogger
+from pykron.core import PykronLogger, Pykron
 import time
-from io import StringIO
 
-app = Pykron()
+logger = PykronLogger()
+app = Pykron(pykron_logger=logger)
+
+@app.AsyncRequest(timeout=120)
+def fun1():
+    app.logging.debug("Fun 1 reporting in")
+    time.sleep(1)
+    app.logging.debug("Fun 1 reporting out")
+    time.sleep(1)
+
+@app.AsyncRequest(timeout=120)
+def fun2():
+    app.logging.debug("Fun 2 reporting in")
+    time.sleep(1)
+    fun1()
+    app.logging.debug("Fun 2 reporting out")
+    time.sleep(1)
+
+@app.AsyncRequest(timeout=120)
+def fun3():
+    app.logging.debug("Fun 3 reporting in")
+    time.sleep(1)
+    fun2()
+    app.logging.debug("Fun 3 reporting out")
+    time.sleep(1)
 
 @app.AsyncRequest(timeout=120)
 def fun4():
-    logger.log.debug("Fun 4 reporting in")
+    app.logging.debug("Fun 4 reporting in")
     time.sleep(1)
-    #fun3()
-    logger.log.debug("Fun 4 reporting out")
+    fun3()
+    app.logging.debug("Fun 4 reporting out")
     time.sleep(1)
 
-output = StringIO()
-
-logger = PykronLogger.getInstance()
-# we manually add a FileHandler, but this is only for JSON
-# execution statistics will not be saved
-logger.addStreamHandler(stream=output,format=PykronLogger.FORMAT_JSON)
 
 fun4()
-time.sleep(2.5)
-
-print('\n\nJSON stored in memory:')
-print(output.getvalue())
+time.sleep(12)
 
 app.close()

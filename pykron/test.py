@@ -1,9 +1,10 @@
 """
 BSD 2-Clause License
 
-Copyright (c) 2020, Davide De Tommaso (dtmdvd@gmail.com)
+Copyright (c) 2020, Davide De Tommaso (davide.detommaso@iit.it),
+                    Adam Lukomski (adam.lukomski@iit.it),
                     Social Cognition in Human-Robot Interaction
-                    Istituto Italiano di Tecnologia (IIT)
+                    Istituto Italiano di Tecnologia, Genova
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -28,29 +29,16 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-''' Example of saving log as a collection of JSON objects (one object - one line) '''
+from pykron.core import Pykron
+import unittest
 
+class PykronTest(unittest.TestCase):
 
-from pykron.core import Pykron, PykronLogger
-import time
+    def setUp(self):
+        app = Pykron()
+        self.assertTrue(app.loop.is_running())
 
-app = Pykron()
-
-@app.AsyncRequest(timeout=120)
-def fun4():
-    logger.log.debug("Fun 4 reporting in")
-    time.sleep(1)
-    #fun3()
-    logger.log.debug("Fun 4 reporting out")
-    time.sleep(1)
-
-
-logger = PykronLogger.getInstance()
-# we manually add a FileHandler, but this is only for JSON
-# execution statistics will not be saved
-logger.addFileHandler(path='.',filename='pykron_json.log',format=PykronLogger.FORMAT_JSON)
-
-fun4()
-time.sleep(2.5)
-
-app.close()
+    def tearDown(self):
+        app = Pykron.getInstance()
+        app.close()
+        self.assertFalse(app.loop.is_running())

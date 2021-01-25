@@ -31,17 +31,19 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ''' Example of saving function executions to a file'''
 
 
+import sys
+sys.path.append('..')
+
 from pykron.core import Pykron, PykronLogger
-PykronLogger.LOGGING_PATH = "."
 import time
 
-app = Pykron()
+logger = PykronLogger(save_csv=True)
+app = Pykron(pykron_logger=logger)
 
 @app.AsyncRequest(timeout=120)
 def fun4():
     logger.log.debug("Fun 4 reporting in")
     time.sleep(1)
-    #fun3()
     logger.log.debug("Fun 4 reporting out")
     time.sleep(1)
 
@@ -49,7 +51,4 @@ def fun4():
 logger = PykronLogger.getInstance()
 fun4()
 time.sleep(2.5)
-
-print('executions saved to:',logger.log_execution_filename())
-
 app.close()

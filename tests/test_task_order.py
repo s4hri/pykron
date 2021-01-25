@@ -32,7 +32,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import unittest
 import time
-from pykron.core import Pykron, PykronLogger, Task, PykronTest
+from pykron.core import Pykron, PykronLogger, Task
+from pykron.test import PykronTest
 
 
 class TestTaskOrder(PykronTest):
@@ -75,11 +76,6 @@ class TestTaskOrder(PykronTest):
                 time.sleep(2)
             return 2
 
-        # A bugged function
-        @Pykron.AsyncRequest()
-        def foo3():
-            return 1/0
-
         # User-defined callback function running once the foo1 ends
         def on_completed(task):
             if task.status == Task.SUCCEED:
@@ -88,7 +84,12 @@ class TestTaskOrder(PykronTest):
             else:
                 print("Something goes wrong")
 
+        # A bugged function
+        @Pykron.AsyncRequest(callback=on_completed)
+        def foo3():
+            return 1/0
+
         req = foo1()
         self.assertEqual(req.task.status, Task.RUNNING)
-        req.wait_for_completed(callback=on_completed)
+        req.wait_for_completed()
         self.assertEqual(req.task.status, Task.CANCELLED)

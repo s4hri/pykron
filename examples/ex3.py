@@ -28,25 +28,36 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
+''' Example of using StringIO in memory to hold the log '''
 
-# manually cancelling a running task
 
+import sys
+sys.path.append('..')
 
 from pykron.core import Pykron, PykronLogger
 import time
+from io import StringIO
 
 app = Pykron()
 
-@app.AsyncRequest(timeout=10)
-def level1_fun():
-    logger = PykronLogger.getInstance()
-    for i in range(0,90):
-        time.sleep(0.1)
-        logger.log.debug('I am still alive')
+@app.AsyncRequest(timeout=120)
+def fun4():
+    logger.log.debug("Fun 4 reporting in")
+    time.sleep(1)
+    logger.log.debug("Fun 4 reporting out")
+    time.sleep(1)
 
-request = level1_fun()
-time.sleep(1)
-request.cancel()
-time.sleep(1) # just wait for it
+
+logger = PykronLogger.getInstance()
+
+output = StringIO()
+logger.addStreamHandler(stream=output)
+
+fun4()
+time.sleep(2.5)
+
+print('\n\nString saved:')
+print(output.getvalue())
+
 
 app.close()

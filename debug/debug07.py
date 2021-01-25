@@ -47,12 +47,9 @@ sys.path.append('..')
 from pykron.core import Pykron, Task, PykronLogger
 
 import time
-import logging
 import threading
 
-
-app = Pykron(logging_level=logging.DEBUG)
-logging = PykronLogger.getInstance()
+app = Pykron()
 
 @app.AsyncRequest()
 def foo1():

@@ -31,7 +31,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import unittest
 import time
-from pykron.core import Pykron, PykronLogger, Task, PykronTest
+from pykron.core import Pykron, PykronLogger, Task
+from pykron.test import PykronTest
 
 class TestBasic(PykronTest):
 
@@ -57,7 +58,7 @@ class TestBasic(PykronTest):
             return 1/0
 
         request = inner_empty_fun()
-        time.sleep(0.2)
+        time.sleep(0.5)
         self.assertEqual(request.task.status, Task.FAILED)
 
     def test_task_running(self):
@@ -91,16 +92,16 @@ class TestBasic(PykronTest):
     def test_task_wait_for_completed_and_callback(self):
         ''' test wait_for_completed together with a callback
         '''
-        @Pykron.AsyncRequest()
-        def inner_empty_fun():
-            time.sleep(0.1)
-            return 1
-
         def on_completed(task):
             self.assertEqual(task.status, Task.SUCCEED)
             self.assertEqual(task.retval, 1)
 
-        inner_empty_fun().wait_for_completed(callback=on_completed)
+        @Pykron.AsyncRequest(callback=on_completed)
+        def inner_empty_fun():
+            time.sleep(0.1)
+            return 1
+
+        inner_empty_fun().wait_for_completed()
 
     def test_return_value_through_future(self):
         ''' see if the future properly stores a returned value

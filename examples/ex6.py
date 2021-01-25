@@ -31,6 +31,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # manually cancelling a running task from a task
 
+import sys
+sys.path.append('..')
 
 from pykron.core import Pykron, PykronLogger
 import time
@@ -43,6 +45,7 @@ def level0_fun():
     time.sleep(1)
     req1.cancel()
     time.sleep(1)
+
 @app.AsyncRequest(timeout=10)
 def level1_fun():
     logger = PykronLogger.getInstance()

@@ -38,16 +38,14 @@ sys.path.append('..')
 from pykron.core import Pykron, Task, PykronLogger
 
 import time
-import logging
 import threading
 
-app = Pykron(logging_level=logging.DEBUG)
-logging = PykronLogger.getInstance()
+app = Pykron(pykron_logger=logger)
 
 @app.AsyncRequest()
 def foo1(t0):
     a = time.perf_counter()-t0
-    logging.log.debug(a)
+    app.logging.debug(a)
     time.sleep(0.5)
 
 t0 = time.perf_counter()
