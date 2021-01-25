@@ -87,9 +87,11 @@ class TestTaskOrder(PykronTest):
         # A bugged function
         @Pykron.AsyncRequest(callback=on_completed)
         def foo3():
+            time.sleep(1)
             return 1/0
 
         req = foo1()
+        time.sleep(0.5)
         self.assertEqual(req.task.status, Task.RUNNING)
         req.wait_for_completed()
         self.assertEqual(req.task.status, Task.CANCELLED)
