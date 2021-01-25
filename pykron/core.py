@@ -247,7 +247,7 @@ class Pykron:
             ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, 0)
             raise SystemError("PyThreadState_SetAsyncExc failed")
 
-    def __init__(self, pykron_logger=None):
+    def __init__(self, pykron_logger=None, profiler=None):
         if Pykron._instance != None:
             raise Exception("This class is a singleton!")
         else:
@@ -259,6 +259,12 @@ class Pykron:
             self._requests = {}
             self._parents = {}
             self._futures = {}
+            if profiler:
+                import cProfile, pstats, io
+                from pstats import SortKey
+                self._profiler = cProfile.Profile()
+            else:
+                self._profiler = None
             self.loop = asyncio.get_event_loop()
             self._worker_thread = threading.Thread(target=self.worker)
             self._worker_thread.start()
@@ -268,7 +274,17 @@ class Pykron:
         return self._logger.log
 
     def worker(self):
+        if self._profiler:
+            self._profiler = cProfile.Profile()
+            self._profiler.enable()
+
         self.loop.run_forever()
+        if self._profiler:
+            self._profiler.disable()
+            sortby = SortKey.CUMULATIVE
+            ps = pstats.Stats(self._profiler).sort_stats(sortby)
+            ps.dump_stats("pykron.stats")
+
 
     def createRequest(self, task, timeout, callback):
         req = AsyncRequest(self.loop, task, timeout, callback)
