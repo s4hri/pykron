@@ -45,10 +45,10 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='pykron',
-    version='0.17',
+    version='0.20',
     description='Python module for managing asynchronous tasks',
     url='https://github.com/s4hri/pykron',
-    download_url='https://github.com/s4hri/pykron/archive/0.17.tar.gz',
+    download_url='https://github.com/s4hri/pykron/archive/0.20.tar.gz',
     author='Davide De Tommaso',
     author_email='davide.detommaso@iit.it',
     install_requires=[],
