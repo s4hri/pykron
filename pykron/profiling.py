@@ -1,9 +1,10 @@
 """
 BSD 2-Clause License
 
-Copyright (c) 2020, Davide De Tommaso (dtmdvd@gmail.com)
+Copyright (c) 2020, Davide De Tommaso (davide.detommaso@iit.it),
+                    Adam Lukomski (adam.lukomski@iit.it),
                     Social Cognition in Human-Robot Interaction
-                    Istituto Italiano di Tecnologia (IIT)
+                    Istituto Italiano di Tecnologia, Genova
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -29,55 +30,39 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 import sys
-sys.path.append('..')
-
-from pykron.core import PykronLogger, Pykron
-import time
-
-logger = PykronLogger(save_csv=True, logging_path='.')
+import os
 
 if sys.version_info > (3,7):
-    app = Pykron(profiling=True, pykron_logger=logger)
-else:
-    app = Pykron(pykron_logger=logger)
+    import cProfile, pstats, io
+    from pstats import SortKey
 
-@app.AsyncRequest(timeout=120)
-def fun1():
-    app.logging.debug("Fun 1 reporting in")
-    time.sleep(1)
-    app.logging.debug("Fun 1 reporting out")
-    time.sleep(1)
-    return 1
+class PykronProfiler:
 
-@app.AsyncRequest(timeout=120)
-def fun2():
-    app.logging.debug("Fun 2 reporting in")
-    time.sleep(1)
-    fun1()
-    app.logging.debug("Fun 2 reporting out")
-    time.sleep(1)
-    return 1
+    def __init__(self):
+        self._profilers = {}
+        self._restrictions = set()
 
-@app.AsyncRequest(timeout=120)
-def fun3():
-    app.logging.debug("Fun 3 reporting in")
-    time.sleep(1)
-    fun2()
-    app.logging.debug("Fun 3 reporting out")
-    time.sleep(1)
-    return 1
+    def addTask(self, task):
+        self._profilers[task.task_id] = cProfile.Profile(subcalls=False, builtins=False)
+        self._restrictions.add(task.func_name)
+        task.set_profiler(self._profilers[task.task_id])
 
-@app.AsyncRequest(timeout=120)
-def fun4():
-    app.logging.debug("Fun 4 reporting in")
-    time.sleep(1)
-    fun3()
-    app.logging.debug("Fun 4 reporting out")
-    time.sleep(1)
-    return 1
+    def saveStats(self):
+        f_stats = []
+        for task_id, profiler in self._profilers.items():
+            stream = io.StringIO()
+            sortby = SortKey.CUMULATIVE
+            ps = pstats.Stats(profiler, stream=stream).strip_dirs()
+            filename = str(task_id) + '.stats'
+            ps.dump_stats(filename)
+            f_stats.append(filename)
+        ps = pstats.Stats(*f_stats)
+        for f in f_stats:
+            os.remove(f)
+        ps.sort_stats(sortby)
 
-
-fun4()
-time.sleep(12)
-
-app.close()
+        restrictions = str(self._restrictions)
+        restrictions= restrictions.replace('{','').replace('}','').replace(',','|').replace('\'','').replace(' ', '')
+        ps.print_stats(restrictions)
+        print(stream.getvalue())
+        ps.dump_stats('pykron.stats')
