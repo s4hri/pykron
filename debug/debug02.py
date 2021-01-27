@@ -40,6 +40,7 @@ from pykron.core import Pykron, Task, PykronLogger
 import time
 import threading
 
+logger = PykronLogger()
 app = Pykron(pykron_logger=logger)
 
 @app.AsyncRequest()

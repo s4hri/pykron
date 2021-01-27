@@ -34,7 +34,7 @@ sys.path.append('..')
 from pykron.core import PykronLogger, Pykron
 import time
 
-logger = PykronLogger(save_csv=True, logging_path='.')
+logger = PykronLogger()
 
 if sys.version_info > (3,7):
     app = Pykron(profiling=True, pykron_logger=logger)

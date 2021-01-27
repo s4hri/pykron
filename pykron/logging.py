@@ -81,7 +81,8 @@ class PykronLogger:
                 self.addFileHandler(logging_path)
 
     def addFileHandler(self, path):
-        filename = datetime.datetime.now().strftime('pykron_%d.%m.%Y_%H:%M.log')
+        datetimestr = datetime.datetime.now().strftime('%d.%m.%Y_%H:%M')
+        filename = "pykron_%s_%s.log" % (__main__.__file__, datetimestr)
         filepath = os.path.join(path, filename)
         ch = logging.FileHandler(filepath, mode='w')
         ch.setLevel(self._logging_level)
@@ -97,20 +98,24 @@ class PykronLogger:
         self._logger.addHandler(ch)
 
     @property
+    def logging_level(self):
+       return self._logging_level
+
+    @property
     def log(self):
        return self._logger
 
     def log_execution(self, task):
         if self._save_csv:
             with self._lock:
-                task_exec = [str(time.time()), task.func_name, task.func_loc, task.task_id, task.caller_name, task.caller_loc, task.parent_id, task.status, task.arrival_ts, task.start_ts, task.end_ts, task.duration, task.idle_time, str(task.retval), str(task.exception), str(task.args)]
+                task_exec = [str(time.time()), task.func_name, task.func_loc, task.caller_name, task.caller_loc, task.status, task.arrival_ts, task.start_ts, task.end_ts, task.duration, task.idle_time, str(task.retval), str(task.exception), str(task.args)]
                 self._executions.append(task_exec)
 
     def save_csv(self):
         if self._save_csv:
             datetimestr = datetime.datetime.now().strftime('%d.%m.%Y_%H:%M')
-            filename = "%s_%s.csv" % (__main__.__file__, datetimestr)
-            headers = ["Timestamp", "Function", "Location", "Task id", "Caller function", "Caller location", "Parent id", "Status", "Arrival Ts", "Start Ts", "End Ts", "Duration", "Idle time", "Return value", "Exception", "Args"]
+            filename = "pykron_%s_%s.csv" % (__main__.__file__, datetimestr)
+            headers = ["Timestamp", "Function", "Location", "Caller function", "Caller location", "Status", "Arrival Ts", "Start Ts", "End Ts", "Duration", "Idle time", "Return value", "Exception", "Args"]
             with open(os.path.join(self._logging_path, filename), 'w') as f:
                 writer = csv.writer(f)
                 writer.writerow(headers)

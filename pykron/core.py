@@ -75,14 +75,14 @@ class Task:
         self._parent_id = parent_id
         self._func_name = self._target.__name__
         self._task_id = task_id
-        self._caller_frame = stack()[2][0]
         self._timeout = False
         self._profiler = None
+        self._name = self._func_name
+        self._caller_frame = Pykron.getInstance().stack[1][0]
         caller_module = inspect.getmodule(self._caller_frame.f_code)
         caller_info = getframeinfo(self._caller_frame)
         caller_source = inspect.getsourcelines(caller_module)
         matching = [s for s in caller_source[0] if "def " + self._func_name in s]
-        self._name = self._func_name
         self._func_loc = "[%s:%d]" % (caller_info.filename, caller_source[0].index(matching[0])+1)
         self._caller_name = caller_info.function
         self._caller_loc = "[%s:%d]" % (caller_info.filename, caller_info.lineno)
@@ -216,12 +216,10 @@ class Pykron:
         def wrapper(target):
             def f(*args, **kwargs):
                 parent_id = threading.current_thread().ident
-
                 task = Task(task_id=Pykron.getInstance().createTaskId(),
                             target=target,
                             args=args,
                             parent_id=parent_id)
-
                 return Pykron.getInstance().createRequest(task, timeout, callback)
             return f
         return wrapper
@@ -257,7 +255,6 @@ class Pykron:
 
     @staticmethod
     def stop_thread(tid, exctype):
-        print(tid)
         """raises the exception, performs cleanup if needed"""
         if not inspect.isclass(exctype):
             raise TypeError("Only types can be raised (not instances)")
@@ -285,6 +282,7 @@ class Pykron:
                 self._profiler = PykronProfiler()
             else:
                 self._profiler = None
+            self._stack = stack()
             self.loop = asyncio.get_event_loop()
             self._worker_thread = threading.Thread(target=self.worker)
             self._worker_thread.start()
@@ -292,6 +290,10 @@ class Pykron:
     @property
     def logging(self):
         return self._logger.log
+
+    @property
+    def stack(self):
+        return self._stack
 
     def worker(self):
         self.loop.run_forever()
@@ -351,9 +353,10 @@ class AsyncRequest:
         self._retval = None
         self._logger = PykronLogger.getInstance()
         self._completed = threading.Event()
+        t0 = time.perf_counter()
         self._executor = ThreadPoolExecutor(max_workers=2)
-        self._future = loop.run_in_executor(self._executor, task.run)
-        self._future_timer = loop.run_in_executor(self._executor, loop.call_later, timeout, self.timeout_cb)
+        self._future = self._loop.run_in_executor(self._executor, task.run)
+        self._future_timer = self._loop.run_in_executor(self._executor, self._loop.call_later, timeout, self.timeout_cb)
 
     @property
     def executor(self):

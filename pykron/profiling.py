@@ -31,6 +31,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import sys
 import os
+import datetime
+import __main__
 
 if sys.version_info > (3,7):
     import cProfile, pstats, io
@@ -65,4 +67,6 @@ class PykronProfiler:
         restrictions= restrictions.replace('{','').replace('}','').replace(',','|').replace('\'','').replace(' ', '')
         ps.print_stats(restrictions)
         print(stream.getvalue())
-        ps.dump_stats('pykron.stats')
+        datetimestr = datetime.datetime.now().strftime('%d.%m.%Y_%H:%M')
+        filename = "pykron_%s_%s.stats" % (__main__.__file__, datetimestr)
+        ps.dump_stats(filename)
