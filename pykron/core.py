@@ -82,15 +82,9 @@ class Task:
         caller_module = inspect.getmodule(self._caller_frame.f_code)
         caller_info = getframeinfo(self._caller_frame)
         caller_source = inspect.getsourcelines(caller_module)
-        matching = [s for s in caller_source[0] if "def " + self._func_name in s]
-        if len(matching) > 0:
-            self._func_loc = "[%s:%d]" % (caller_info.filename, caller_source[0].index(matching[0])+1)
-            self._caller_name = caller_info.function
-            self._caller_loc = "[%s:%d]" % (caller_info.filename, caller_info.lineno)
-        else:
-            self._func_loc = "[nd:nd]"
-            self._caller_name = caller_info.function
-            self._caller_loc = "[nd:nd]"
+        self._func_loc = "[%s:%d]" % (os.path.relpath(inspect.getsourcefile(self._target)), inspect.getsourcelines(self._target)[1]+1)
+        self._caller_name = caller_info.function
+        self._caller_loc = "[%s:%d]" % (os.path.relpath(caller_info.filename), caller_info.lineno)
 
 
     @property
