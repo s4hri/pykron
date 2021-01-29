@@ -37,8 +37,8 @@ sys.path.append('..')
 from pykron.core import Pykron, PykronLogger
 import time
 
-logger = PykronLogger(save_csv=True)
-app = Pykron(pykron_logger=logger)
+logger = PykronLogger.getInstance(save_csv=True)
+app = Pykron.getInstance(pykron_logger=logger)
 
 @app.AsyncRequest(timeout=120)
 def fun4():

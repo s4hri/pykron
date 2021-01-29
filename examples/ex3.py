@@ -38,7 +38,7 @@ from pykron.core import Pykron, PykronLogger
 import time
 from io import StringIO
 
-app = Pykron()
+app = Pykron.getInstance()
 
 @app.AsyncRequest(timeout=120)
 def fun4():
@@ -58,6 +58,4 @@ time.sleep(2.5)
 
 print('\n\nString saved:')
 print(output.getvalue())
-
-
 app.close()

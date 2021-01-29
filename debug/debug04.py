@@ -44,7 +44,7 @@ from pykron.core import Pykron, Task, PykronLogger
 import time
 import threading
 
-app = Pykron()
+app = Pykron.getInstance()
 
 @app.AsyncRequest()
 def foo1(t0):

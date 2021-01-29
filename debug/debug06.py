@@ -49,9 +49,9 @@ import time
 import threading
 
 if sys.version_info > (3,7):
-    app = Pykron(profiling=True)
+    app = Pykron.getInstance(profiling=True)
 else:
-    app = Pykron()
+    app = Pykron.getInstance()
 
 @app.AsyncRequest()
 def foo1(t0):

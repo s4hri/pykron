@@ -44,7 +44,7 @@ from pykron.core import Pykron, Task, PykronLogger
 import time
 import threading
 
-app = Pykron()
+app = Pykron.getInstance()
 storage = list()
 
 def completed(task):

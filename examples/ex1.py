@@ -37,9 +37,9 @@ import time
 logger = PykronLogger()
 
 if sys.version_info > (3,7):
-    app = Pykron(profiling=True, pykron_logger=logger)
+    app = Pykron.getInstance(profiling=True, pykron_logger=logger)
 else:
-    app = Pykron(pykron_logger=logger)
+    app = Pykron.getInstance(pykron_logger=logger)
 
 @app.AsyncRequest(timeout=120)
 def fun1():

@@ -37,7 +37,7 @@ sys.path.append('..')
 from pykron.core import Pykron, PykronLogger
 import time
 
-app = Pykron()
+app = Pykron.getInstance()
 
 @app.AsyncRequest(timeout=10)
 def level0_fun():

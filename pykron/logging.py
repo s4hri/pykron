@@ -53,7 +53,7 @@ class PykronLogger:
     LOGGING_PATH = None      # starts file logger
 
     @staticmethod
-    def getInstance():
+    def getInstance(logging_level=LOGGING_LEVEL, logging_path=LOGGING_PATH, logging_format=FORMAT, save_csv=False):
         if PykronLogger._instance == None:
             PykronLogger()
         return PykronLogger._instance

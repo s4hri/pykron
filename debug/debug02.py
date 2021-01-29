@@ -40,8 +40,8 @@ from pykron.core import Pykron, Task, PykronLogger
 import time
 import threading
 
-logger = PykronLogger()
-app = Pykron(pykron_logger=logger)
+logger = PykronLogger.getInstance()
+app = Pykron.getInstance(pykron_logger=logger)
 
 @app.AsyncRequest()
 def foo1(t0):
@@ -52,5 +52,4 @@ def foo1(t0):
 t0 = time.perf_counter()
 mytask = foo1(t0)
 time.sleep(1)
-
 app.close()

@@ -35,7 +35,7 @@ import unittest
 class PykronTest(unittest.TestCase):
 
     def setUp(self):
-        app = Pykron()
+        app = Pykron.getInstance()
         self.assertTrue(app.loop.is_running())
 
     def tearDown(self):

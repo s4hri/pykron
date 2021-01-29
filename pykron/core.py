@@ -233,9 +233,9 @@ class Pykron:
         Pykron._instance = None
 
     @staticmethod
-    def getInstance():
+    def getInstance(profiling=False, pykron_logger=None):
         if Pykron._instance == None:
-            Pykron()
+            Pykron(profiling, pykron_logger)
         return Pykron._instance
 
     @staticmethod
@@ -328,7 +328,6 @@ class Pykron:
         if self._logger:
             threading.Thread(target=self._logger.log_execution, args=(task,)).start()
         del self._requests[req_id]
-
 
     def getRequest(self, req_id):
         return self._requests[req_id]

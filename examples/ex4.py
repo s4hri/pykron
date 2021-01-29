@@ -36,8 +36,8 @@ sys.path.append('..')
 from pykron.core import Pykron, PykronLogger
 import time
 
-logger = PykronLogger(logging_path='.', logging_format=PykronLogger.FORMAT_JSON)
-app = Pykron()
+logger = PykronLogger.getInstance(logging_path='.', logging_format=PykronLogger.FORMAT_JSON)
+app = Pykron.getInstance()
 
 @app.AsyncRequest(timeout=120)
 def fun4():
@@ -48,5 +48,4 @@ def fun4():
 
 fun4()
 time.sleep(2.5)
-
 app.close()

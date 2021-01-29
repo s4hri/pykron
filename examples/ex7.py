@@ -29,12 +29,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 import sys
 sys.path.append('..')
-
+import mod2
 from pykron.core import PykronLogger, Pykron
 
 app = Pykron.getInstance()
-
-import mod2
 
 mod2.foo2().wait_for_completed()
 
