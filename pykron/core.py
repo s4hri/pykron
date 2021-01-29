@@ -78,7 +78,7 @@ class Task:
         self._timeout = False
         self._profiler = None
         self._name = self._func_name
-        self._caller_frame = Pykron.getInstance().stack[1][0]
+        self._caller_frame = stack()[2][0]
         caller_module = inspect.getmodule(self._caller_frame.f_code)
         caller_info = getframeinfo(self._caller_frame)
         caller_source = inspect.getsourcelines(caller_module)
@@ -282,7 +282,6 @@ class Pykron:
                 self._profiler = PykronProfiler()
             else:
                 self._profiler = None
-            self._stack = stack()
             self.loop = asyncio.get_event_loop()
             self._worker_thread = threading.Thread(target=self.worker)
             self._worker_thread.start()
@@ -290,10 +289,6 @@ class Pykron:
     @property
     def logging(self):
         return self._logger.log
-
-    @property
-    def stack(self):
-        return self._stack
 
     def worker(self):
         self.loop.run_forever()
