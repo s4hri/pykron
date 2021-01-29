@@ -82,7 +82,7 @@ class PykronLogger:
 
     def addFileHandler(self, path):
         datetimestr = datetime.datetime.now().strftime('%d.%m.%Y_%H:%M')
-        filename = "pykron_%s_%s.log" % (__main__.__file__, datetimestr)
+        filename = "pykron_%s_%s.log" % (__main__.__file__.replace('.|/',''), datetimestr)
         filepath = os.path.join(path, filename)
         ch = logging.FileHandler(filepath, mode='w')
         ch.setLevel(self._logging_level)
