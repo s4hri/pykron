@@ -61,9 +61,10 @@ class Task:
     SUCCEED    = 'SUCCEED'
     TIMEOUT    = 'TIMEOUT'
 
-    def __init__(self, task_id, target, args, parent_id):
+    def __init__(self, task_id, target, args, kwargs, parent_id):
         self._target = target
         self._args = args
+        self._kwargs = kwargs
         self._retval = None
         self._status = Task.IDLE
         self._start_ts = None
@@ -90,6 +91,10 @@ class Task:
     @property
     def args(self):
         return self._args
+
+    @property
+    def kwargs(self):
+        return self._kwargs
 
     @property
     def arrival_ts(self):
@@ -195,9 +200,9 @@ class Task:
         self._start_ts = time.perf_counter()
         self._status = Task.RUNNING
         if self._profiler:
-            res = self._profiler.runcall(self._target, *self._args)
+            res = self._profiler.runcall(self._target, *self._args, **self._kwargs)
         else:
-            res = self._target(*self._args)
+            res = self._target(*self._args, **self._kwargs)
         return res
 
     def set_timeout(self):
@@ -219,6 +224,7 @@ class Pykron:
                 task = Task(task_id=Pykron.getInstance().createTaskId(),
                             target=target,
                             args=args,
+                            kwargs=kwargs,
                             parent_id=parent_id)
                 return Pykron.getInstance().createRequest(task, timeout, callback)
             return f

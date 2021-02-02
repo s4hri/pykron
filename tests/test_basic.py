@@ -89,6 +89,7 @@ class TestBasic(PykronTest):
         time.sleep(0.1) # wait for it
         self.assertEqual(request.task.status, Task.CANCELLED)
 
+
     def test_task_wait_for_completed_and_callback(self):
         ''' test wait_for_completed together with a callback
         '''
@@ -126,6 +127,17 @@ class TestBasic(PykronTest):
 
         val = inner_fun().wait_for_completed()
         self.assertEqual(val, 'test')
+
+    def test_kwargs_forward(self):
+        ''' test kwargs
+        '''
+        @Pykron.AsyncRequest()
+        def inner_fun(arg1,arg2=True):
+            time.sleep(0.1)
+            return arg2
+
+        val = inner_fun(False,False).wait_for_completed()
+        self.assertEqual(val, False)
 
     def test_same_time(self):
         ''' test if 5 functions can be run at the same time (without join)
