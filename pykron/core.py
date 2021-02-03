@@ -217,7 +217,7 @@ class Pykron:
     TIMEOUT_DEFAULT = 10.0
 
     @staticmethod
-    def AsyncRequest(timeout=TIMEOUT_DEFAULT, callback=None):
+    def AsyncRequest(timeout=TIMEOUT_DEFAULT, callback=None, cancel_propagation=True):
         def wrapper(target):
             def f(*args, **kwargs):
                 parent_id = threading.current_thread().ident
@@ -226,7 +226,7 @@ class Pykron:
                             args=args,
                             kwargs=kwargs,
                             parent_id=parent_id)
-                return Pykron.getInstance().createRequest(task, timeout, callback)
+                return Pykron.getInstance().createRequest(task, timeout, callback, cancel_propagation)
             return f
         return wrapper
 
@@ -301,10 +301,10 @@ class Pykron:
         if self._profiler:
             self._profiler.saveStats()
 
-    def createRequest(self, task, timeout, callback):
+    def createRequest(self, task, timeout, callback, cancel_propagation):
         if self._profiler:
             self._profiler.addTask(task)
-        req = AsyncRequest(self.loop, task, timeout, callback)
+        req = AsyncRequest(self.loop, task, timeout, callback, cancel_propagation)
         req_id = task.thread_id
         self._requests[req_id] = req
         self._parents[req_id] = task.parent_id
@@ -323,7 +323,8 @@ class Pykron:
         if task.status != Task.SUCCEED:
             if threading.main_thread().ident != task.parent_id:
                 parent_req = Pykron.getInstance().getRequest(task._parent_id)
-                parent_req.cancel()
+                if parent_req.cancel_propagation:
+                    parent_req.cancel()
         if task.status != Task.TIMEOUT:
             threading.Thread(target=self._requests[req_id].stop_timeout_handler).start()
         self._requests[req_id].set_completed()
@@ -333,7 +334,6 @@ class Pykron:
         self._requests[req_id].executor.shutdown(wait=False)
         if self._logger:
             threading.Thread(target=self._logger.log_execution, args=(task,)).start()
-        del self._requests[req_id]
 
     def getRequest(self, req_id):
         return self._requests[req_id]
@@ -344,13 +344,14 @@ class Pykron:
 
 class AsyncRequest:
 
-    def __init__(self, loop, task, timeout, callback=None):
+    def __init__(self, loop, task, timeout, callback=None, cancel_propagation=True):
         self._task = task
         self._timeout = timeout
         self._loop = loop
         self._callback = callback
         self._timeout_handler_id = None
         self._retval = None
+        self._cancel_propagation = cancel_propagation
         self._logger = PykronLogger.getInstance()
         self._completed = threading.Event()
         t0 = time.perf_counter()
@@ -361,6 +362,10 @@ class AsyncRequest:
     @property
     def executor(self):
         return self._executor
+
+    @property
+    def cancel_propagation(self):
+        return self._cancel_propagation
 
     @property
     def future(self):

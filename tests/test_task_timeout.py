@@ -63,3 +63,42 @@ class TestTaskTimeout(PykronTest):
         request.wait_for_completed(timeout=1.0)
         self.assertEqual(request.task.status, Task.TIMEOUT)
         self.assertLess(request.task.duration, 2.0)
+
+    def test_timeout_cancel(self):
+        ''' test that timeout causes task cancelation
+        '''
+
+        @Pykron.AsyncRequest(timeout=0.2)
+        def foo1():
+            time.sleep(0.5)
+
+        @Pykron.AsyncRequest(timeout=2.0)
+        def foo2():
+            req = foo1()
+            time.sleep(1.0)
+            self.assertEqual(req.task.status, Task.TIMEOUT)
+            self.assertLess(req.task.duration, 0.5)
+
+
+        req = foo2()
+        time.sleep(2.0)
+        self.assertEqual(req.task.status, Task.CANCELLED)
+
+    def test_timeout_nocancel(self):
+        ''' test that timeout causes task cancelation
+        '''
+
+        @Pykron.AsyncRequest(timeout=0.2)
+        def foo1():
+            time.sleep(0.5)
+
+        @Pykron.AsyncRequest(timeout=2.0, cancel_propagation=False)
+        def foo2():
+            req = foo1()
+            time.sleep(1.0)
+            self.assertEqual(req.task.status, Task.TIMEOUT)
+            self.assertLess(req.task.duration, 0.5)
+
+        req = foo2()
+        time.sleep(2.0)
+        self.assertEqual(req.task.status, Task.SUCCEED)
