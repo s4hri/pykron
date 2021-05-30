@@ -1,7 +1,7 @@
 """
 BSD 2-Clause License
 
-Copyright (c) 2020, Davide De Tommaso (davide.detommaso@iit.it),
+Copyright (c) 2021, Davide De Tommaso (davide.detommaso@iit.it),
                     Adam Lukomski (adam.lukomski@iit.it),
                     Social Cognition in Human-Robot Interaction
                     Istituto Italiano di Tecnologia, Genova
@@ -45,10 +45,10 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='pykron',
-    version='0.24',
+    version='0.25',
     description='Python module for managing asynchronous tasks',
     url='https://github.com/s4hri/pykron',
-    download_url='https://github.com/s4hri/pykron/archive/0.24.tar.gz',
+    download_url='https://github.com/s4hri/pykron/archive/0.25.tar.gz',
     author='Davide De Tommaso',
     author_email='davide.detommaso@iit.it',
     install_requires=[],

@@ -1,7 +1,7 @@
 """
 BSD 2-Clause License
 
-Copyright (c) 2020, Davide De Tommaso (dtmdvd@gmail.com)
+Copyright (c) 2021, Davide De Tommaso (dtmdvd@gmail.com)
                     Social Cognition in Human-Robot Interaction
                     Istituto Italiano di Tecnologia (IIT)
 All rights reserved.

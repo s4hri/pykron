@@ -1,7 +1,7 @@
 """
 BSD 2-Clause License
 
-Copyright (c) 2020, Davide De Tommaso (davide.detommaso@iit.it),
+Copyright (c) 2021, Davide De Tommaso (davide.detommaso@iit.it),
                     Adam Lukomski (adam.lukomski@iit.it),
                     Social Cognition in Human-Robot Interaction
                     Istituto Italiano di Tecnologia, Genova
@@ -53,7 +53,7 @@ class PykronLogger:
     LOGGING_PATH = None      # starts file logger
 
     @staticmethod
-    def getInstance(logging_level=LOGGING_LEVEL, logging_path=LOGGING_PATH, logging_format=FORMAT, save_csv=False):
+    def getInstance():
         if PykronLogger._instance == None:
             PykronLogger()
         return PykronLogger._instance
@@ -114,7 +114,7 @@ class PykronLogger:
     def save_csv(self):
         if self._save_csv:
             datetimestr = datetime.datetime.now().strftime('%d.%m.%Y_%H:%M')
-            filename = "pykron_%s_%s.csv" % (__main__.__file__, datetimestr)
+            filename = "pykron_%s.csv" % (datetimestr)
             headers = ["Timestamp", "Function", "Location", "Caller function", "Caller location", "Status", "Arrival Ts", "Start Ts", "End Ts", "Duration", "Idle time", "Return value", "Exception", "Args"]
             with open(os.path.join(self._logging_path, filename), 'w') as f:
                 writer = csv.writer(f)

@@ -1,7 +1,7 @@
 """
 BSD 2-Clause License
 
-Copyright (c) 2020, Davide De Tommaso (dtmdvd@gmail.com)
+Copyright (c) 2021, Davide De Tommaso (dtmdvd@gmail.com)
                     Social Cognition in Human-Robot Interaction
                     Istituto Italiano di Tecnologia (IIT)
 All rights reserved.
@@ -34,11 +34,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import sys
 sys.path.append('..')
 
-from pykron.core import Pykron, PykronLogger
+from pykron.core import Pykron
 import time
 
-logger = PykronLogger.getInstance(save_csv=True)
-app = Pykron.getInstance(pykron_logger=logger)
+app = Pykron.getInstance()
 
 @app.AsyncRequest(timeout=120)
 def fun4():

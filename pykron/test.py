@@ -1,7 +1,7 @@
 """
 BSD 2-Clause License
 
-Copyright (c) 2020, Davide De Tommaso (davide.detommaso@iit.it),
+Copyright (c) 2021, Davide De Tommaso (davide.detommaso@iit.it),
                     Adam Lukomski (adam.lukomski@iit.it),
                     Social Cognition in Human-Robot Interaction
                     Istituto Italiano di Tecnologia, Genova
@@ -30,6 +30,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
 from pykron.core import Pykron
+from pykron.logging import PykronLogger
+
 import unittest
 
 class PykronTest(unittest.TestCase):

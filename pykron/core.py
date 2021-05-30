@@ -1,7 +1,7 @@
 """
 BSD 2-Clause License
 
-Copyright (c) 2020, Davide De Tommaso (davide.detommaso@iit.it),
+Copyright (c) 2021, Davide De Tommaso (davide.detommaso@iit.it),
                     Adam Lukomski (adam.lukomski@iit.it),
                     Social Cognition in Human-Robot Interaction
                     Istituto Italiano di Tecnologia, Genova
@@ -49,7 +49,6 @@ import atexit
 
 from pykron.logging import PykronLogger
 from pykron.profiling import PykronProfiler
-
 atexit.unregister(concurrent.futures.thread._python_exit)
 
 class Task:
@@ -86,7 +85,6 @@ class Task:
         self._func_loc = "[%s:%d]" % (os.path.relpath(inspect.getsourcefile(self._target)), inspect.getsourcelines(self._target)[1]+1)
         self._caller_name = caller_info.function
         self._caller_loc = "[%s:%d]" % (os.path.relpath(caller_info.filename), caller_info.lineno)
-
 
     @property
     def args(self):
@@ -239,9 +237,9 @@ class Pykron:
         Pykron._instance = None
 
     @staticmethod
-    def getInstance(profiling=False, pykron_logger=None):
+    def getInstance():
         if Pykron._instance == None:
-            Pykron(profiling, pykron_logger)
+            Pykron()
         return Pykron._instance
 
     @staticmethod
@@ -271,7 +269,7 @@ class Pykron:
             ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, 0)
             raise SystemError("PyThreadState_SetAsyncExc failed")
 
-    def __init__(self, profiling=False, pykron_logger=None):
+    def __init__(self, pykron_logger=None, profiling=False):
         if Pykron._instance != None:
             raise Exception("This class is a singleton!")
         else:
