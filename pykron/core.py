@@ -185,10 +185,9 @@ class Task:
             f = traceback.extract_tb(tb)[-1]
             lineno = f.lineno
             filename = f.filename
-            e = "%s(): Generated an exception: '%s' Line: %s,  File: %s" % (self.func_name, e, lineno, filename)
-            self._exception = e
+            self._exception = "%s Line: %s,  File: %s" % (e, lineno, filename)
             self._status = Task.FAILED
-            self.logging.error("%s: %s" % (self.name, e))
+            self.logging.error("T%d: TASK FAILED! Exception: %s" % (self.task_id, self._exception))
         self.logging.debug("T%d: TASK COMPLETED! Status: %s, Duration: %.3f %s(%s) <- %s(%s)" % (self.task_id, self.status, self.duration, self.func_loc, self.func_name, self.caller_loc, self.caller_name))
 
 
