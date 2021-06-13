@@ -1,8 +1,7 @@
 """
 BSD 2-Clause License
 
-Copyright (c) 2020, Davide De Tommaso (davide.detommaso@iit.it),
-                    Adam Lukomski (adam.lukomski@iit.it),
+Copyright (c) 2021, Davide De Tommaso (dtmdvd@gmail.com)
                     Social Cognition in Human-Robot Interaction
                     Istituto Italiano di Tecnologia (IIT)
 All rights reserved.
@@ -28,52 +27,13 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
-
-
-''' how much time does it take to spin up a task?
-
-    for-loop test, classic style
-
-    very quick function, this time the measurements are before-during and during-after
-
-    in commit 3212db1 works perfectly, but exhibits strange total time variability
-
-'''
-
 import sys
 sys.path.append('..')
+import mod2
+from pykron.core import Pykron
 
-from pykron.core import Pykron, Task, PykronLogger
+app = Pykron(logging_path)
 
-import time
-import threading
+mod2.foo2.asyn().wait_for_completed()
 
-if sys.version_info > (3,7):
-    app = Pykron.getInstance(profiling=True)
-else:
-    app = Pykron.getInstance()
-
-@app.AsyncRequest()
-def foo1(t0):
-    a = time.perf_counter()-t0
-    app.logging.debug(a)
-    return (a,time.perf_counter())
-
-
-storage = list() # touple, contains both times
-for i in range(0,100):
-    t0 = time.perf_counter()
-
-    mytask = foo1(t0)
-    time.sleep(0.1)
-    storage.append(mytask.future.result()[0])
-
-for line in storage:
-    print(line)
-
-
-# I like to leave some time to see if the cleanup fails
-
-time.sleep(1)
 app.close()
-time.sleep(1)

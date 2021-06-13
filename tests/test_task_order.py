@@ -46,14 +46,16 @@ class TestTaskOrder(PykronTest):
             time.sleep(0.1)
             return 1
 
-        a = like("strawberries")
-        b = like("bananas")
+        a = like.asyn("strawberries")
+        b = like.asyn("bananas")
+        a.task.started.wait()
         self.assertEqual(a.task.status, Task.RUNNING)
+        b.task.started.wait()
         self.assertEqual(b.task.status, Task.RUNNING)
         Pykron.join([a,b])
         self.assertEqual(a.task.status, Task.SUCCEED)
         self.assertEqual(b.task.status, Task.SUCCEED)
-        c = like("mangos")
+        c = like.asyn("mangos")
         res = c.wait_for_completed()
         self.assertEqual(c.task.status, Task.SUCCEED)
         self.assertEqual(res, 1)
@@ -62,7 +64,7 @@ class TestTaskOrder(PykronTest):
         # 2-levels nested function foo1->foo2->foo3
         @Pykron.AsyncRequest()
         def foo1():
-            res = foo2().wait_for_completed()
+            res = foo2.asyn().wait_for_completed()
             time.sleep(5)
             return 1
 
@@ -72,17 +74,14 @@ class TestTaskOrder(PykronTest):
             while True:
                 print("I am alive! ")
                 time.sleep(1)
-                foo3()
+                foo3.asyn()
                 time.sleep(2)
             return 2
 
         # User-defined callback function running once the foo1 ends
         def on_completed(task):
             if task.status == Task.SUCCEED:
-                print("Everything's fine")
                 self.fail()
-            else:
-                print("Something goes wrong")
 
         # A bugged function
         @Pykron.AsyncRequest(callback=on_completed)
@@ -90,8 +89,8 @@ class TestTaskOrder(PykronTest):
             time.sleep(1)
             return 1/0
 
-        req = foo1()
-        time.sleep(0.5)
+        req = foo1.asyn()
+        req.task.started.wait()
         self.assertEqual(req.task.status, Task.RUNNING)
         req.wait_for_completed()
         self.assertEqual(req.task.status, Task.CANCELLED)

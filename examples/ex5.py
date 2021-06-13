@@ -28,26 +28,26 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-
-# manually cancelling a running task
-
+import time
 import sys
 sys.path.append('..')
 
-from pykron.core import Pykron, PykronLogger
-import time
+from pykron.core import Pykron
+app = Pykron()
 
-app = Pykron.getInstance()
+@app.AsyncRequest()
+def goo():
+    return 1/0
 
-@app.AsyncRequest(timeout=10)
-def level1_fun():
-    logger = PykronLogger.getInstance()
-    for i in range(0,90):
-        time.sleep(0.1)
-        logger.log.debug('I am still alive')
+@app.AsyncRequest()
+def foo():
+    goo.asyn()
+    time.sleep(1)
 
-request = level1_fun()
-time.sleep(1)
-request.cancel()
-time.sleep(1) # just wait for it
-app.close()
+@app.AsyncRequest()
+def noo():
+    time.sleep(4)
+
+req = noo.asyn()
+foo.asyn().wait_for_completed()
+req.wait_for_completed()

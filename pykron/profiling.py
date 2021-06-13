@@ -68,5 +68,6 @@ class PykronProfiler:
         ps.print_stats(restrictions)
         print(stream.getvalue())
         datetimestr = datetime.datetime.now().strftime('%d.%m.%Y_%H:%M')
-        filename = "pykron_%s_%s.stats" % (__main__.__file__, datetimestr)
+        main_name = os.path.split(__main__.__file__)[1].split('.')[0]
+        filename = "%s_%s.stats" % (main_name, datetimestr)
         ps.dump_stats(filename)

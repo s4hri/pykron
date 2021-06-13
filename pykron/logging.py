@@ -38,51 +38,26 @@ import time
 import __main__
 
 class PykronLogger:
-    ''' logging wrapper for quick setup
 
-    creates a singleton _instance and adds basic handlers
-    '''
+    def __init__(self, logging_level, logging_format, logging_file=False, logging_path='.', save_csv=False):
+        self._logging_level = logging_level
+        self._logging_path = logging_path
+        self._logging_format = logging_format
+        self._logger = logging.getLogger('pykron')
+        self._logger.setLevel(logging_level)
 
-    _instance = None
+        self._executions = []
+        self._save_csv = save_csv
 
-    FORMAT = '%(asctime)s - %(levelname)s - %(message)s'   # base format
-    FORMAT_VERBOSE = '%(asctime)s - %(levelname)s - %(module)s - %(process)d - %(thread)d - %(message)s'
-    FORMAT_JSON = '{"asctime": "%(asctime)-15s", "created": %(created)f, "relativeCreated": %(relativeCreated)f, "levelname": "%(levelname)s", "module": "%(module)s", "process": %(process)d, "processName": "%(processName)s", "thread": %(thread)d, "threadName": "%(threadName)s", "message": "%(message)s"}'
-
-    LOGGING_LEVEL = logging.DEBUG
-    LOGGING_PATH = None      # starts file logger
-
-    @staticmethod
-    def getInstance():
-        if PykronLogger._instance == None:
-            PykronLogger()
-        return PykronLogger._instance
-
-    def __init__(self, logging_level=LOGGING_LEVEL, logging_path=LOGGING_PATH, logging_format=FORMAT, save_csv=False):
-        if PykronLogger._instance != None:
-            raise Exception("This class is a singleton!")
+        if logging_file is False:
+            self.addStreamHandler()
         else:
-            PykronLogger._instance = self
-            self._logging_level = logging_level
-            self._logging_path = logging_path
-            self._logging_format = logging_format
-            self._logger = logging.getLogger('pykron')
-            self._logger.setLevel(logging_level)
-
-            self._executions = []
-            self._lock = threading.Lock()
-            self._save_csv = save_csv
-
-            if self._logging_path is None:
-                self.addStreamHandler()
-                if self._save_csv:
-                    self._logging_path = '.'
-            else:
-                self.addFileHandler(logging_path)
+            self.addFileHandler(logging_path)
 
     def addFileHandler(self, path):
         datetimestr = datetime.datetime.now().strftime('%d.%m.%Y_%H:%M')
-        filename = "pykron_%s_%s.log" % (__main__.__file__.replace('.|/',''), datetimestr)
+        main_name = os.path.split(__main__.__file__)[1].split('.')[0]
+        filename = "%s_%s.log" % (main_name, datetimestr)
         filepath = os.path.join(path, filename)
         ch = logging.FileHandler(filepath, mode='w')
         ch.setLevel(self._logging_level)
@@ -107,14 +82,14 @@ class PykronLogger:
 
     def log_execution(self, task):
         if self._save_csv:
-            with self._lock:
-                task_exec = [str(time.time()), task.func_name, task.func_loc, task.caller_name, task.caller_loc, task.status, task.arrival_ts, task.start_ts, task.end_ts, task.duration, task.idle_time, str(task.retval), str(task.exception), str(task.args)]
-                self._executions.append(task_exec)
+            task_exec = [str(time.time()), task.func_name, task.func_loc, task.caller_name, task.caller_loc, task.status, task.arrival_ts, task.start_ts, task.end_ts, task.duration, task.idle_time, str(task.retval), str(task.exception), str(task.args)]
+            self._executions.append(task_exec)
 
     def save_csv(self):
         if self._save_csv:
             datetimestr = datetime.datetime.now().strftime('%d.%m.%Y_%H:%M')
-            filename = "pykron_%s.csv" % (datetimestr)
+            main_name = os.path.split(__main__.__file__)[1].split('.')[0]
+            filename = "%s_%s.csv" % (main_name, datetimestr)
             headers = ["Timestamp", "Function", "Location", "Caller function", "Caller location", "Status", "Arrival Ts", "Start Ts", "End Ts", "Duration", "Idle time", "Return value", "Exception", "Args"]
             with open(os.path.join(self._logging_path, filename), 'w') as f:
                 writer = csv.writer(f)

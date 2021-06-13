@@ -45,11 +45,9 @@ import logging
 import ctypes
 import inspect
 import concurrent
-import atexit
 
 from pykron.logging import PykronLogger
 from pykron.profiling import PykronProfiler
-atexit.unregister(concurrent.futures.thread._python_exit)
 
 class Task:
 
@@ -71,7 +69,7 @@ class Task:
         self._duration = None
         self._exception = None
         self._arrival_ts = time.perf_counter()
-        self._logger = PykronLogger.getInstance()
+        self._logger = Pykron.getInstance().logger
         self._parent_id = parent_id
         self._func_name = self._target.__name__
         self._task_id = task_id
@@ -85,6 +83,7 @@ class Task:
         self._func_loc = "[%s:%d]" % (os.path.relpath(inspect.getsourcefile(self._target)), inspect.getsourcelines(self._target)[1]+1)
         self._caller_name = caller_info.function
         self._caller_loc = "[%s:%d]" % (os.path.relpath(caller_info.filename), caller_info.lineno)
+        self._started = threading.Event()
 
     @property
     def args(self):
@@ -159,6 +158,10 @@ class Task:
         return self._start_ts
 
     @property
+    def started(self):
+        return self._started
+
+    @property
     def task_id(self):
         return self._task_id
 
@@ -166,20 +169,22 @@ class Task:
     def thread_id(self):
         return self._thread_id
 
-    def completed(self, future):
+    @property
+    def current_thread(self):
+        return threading.current_thread()
+
+    def finalize(self, future):
         self._end_ts = time.perf_counter()
         try:
             self._retval = future.result()
             self._status = Task.SUCCEED
         except asyncio.CancelledError:
             if self._timeout:
-                e = "%s(): TIMEOUT OCCURRED!" % (self.func_name)
-                self._exception = TimeoutError
+                self.logging.error("T%d: TIMEOUT OCCURRED! %s(%s) <- %s(%s)" % (self.task_id, self.func_loc, self.func_name, self.caller_loc, self.caller_name))
                 self._status = Task.TIMEOUT
             else:
-                e = "%s(): TASK CANCELLED!" % (self.func_name)
-                self._exception = e
                 self._status = Task.CANCELLED
+                self.logging.error("T%d: TASK CANCELLED! %s(%s) <- %s(%s)" % (self.task_id, self.func_loc, self.func_name, self.caller_loc, self.caller_name))
         except Exception as e:
             exc_type, exc_obj, tb = sys.exc_info()
             f = traceback.extract_tb(tb)[-1]
@@ -193,8 +198,10 @@ class Task:
 
     def run(self):
         self._thread_id = threading.current_thread().ident
+        Pykron.getInstance().set_thread_id(self.thread_id, self.task_id)
         self.logging.debug("T%d: TASK STARTED! %s(%s) <- %s(%s)" % (self.task_id, self.func_loc, self.func_name, self.caller_loc, self.caller_name))
         self._start_ts = time.perf_counter()
+        self.started.set()
         self._status = Task.RUNNING
         if self._profiler:
             res = self._profiler.runcall(self._target, *self._args, **self._kwargs)
@@ -211,25 +218,40 @@ class Task:
 class Pykron:
 
     _instance = None
-    TIMEOUT_DEFAULT = 10.0
+    TIMEOUT_DEFAULT = 30.0
+
+    FORMAT = '%(asctime)s - %(levelname)s - %(message)s'
+    FORMAT_VERBOSE = '%(asctime)s - %(levelname)s - %(module)s - %(process)d - %(thread)d - %(message)s'
+    FORMAT_JSON = '{"asctime": "%(asctime)-15s", "created": %(created)f, "relativeCreated": %(relativeCreated)f, "levelname": "%(levelname)s", "module": "%(module)s", "process": %(process)d, "processName": "%(processName)s", "thread": %(thread)d, "threadName": "%(threadName)s", "message": "%(message)s"}'
+
+    LOGGING_LEVEL = logging.DEBUG
+    LOGGING_PATH = '.'
 
     @staticmethod
     def AsyncRequest(timeout=TIMEOUT_DEFAULT, callback=None, cancel_propagation=True):
         def wrapper(target):
-            def f(*args, **kwargs):
-                parent_id = threading.current_thread().ident
-                task = Task(task_id=Pykron.getInstance().createTaskId(),
+
+                def asyn(*args, **kwargs):
+                    parent_id = threading.current_thread().ident
+                    task = Task(task_id=Pykron.getInstance().createTaskId(),
                             target=target,
                             args=args,
                             kwargs=kwargs,
                             parent_id=parent_id)
-                return Pykron.getInstance().createRequest(task, timeout, callback, cancel_propagation)
-            return f
+                    return Pykron.getInstance().createRequest(task, timeout, callback, cancel_propagation)
+
+                def f(*args, **kwargs):
+                    return target(*args, **kwargs)
+
+                w = f
+                w.__setattr__('asyn', asyn)
+                return w
         return wrapper
 
     @staticmethod
     def close():
         app = Pykron.getInstance()
+        app.wait_all_completed()
         app.save_csv()
         app.loop.call_soon_threadsafe(app.loop.stop)
         app._worker_thread.join()
@@ -240,21 +262,6 @@ class Pykron:
         if Pykron._instance == None:
             Pykron()
         return Pykron._instance
-
-    @staticmethod
-    def join(requests):
-        return_values = []
-        executors = {}
-
-        for req in requests:
-            req.wait_for_completed()
-
-        for req in requests:
-            try:
-                return_values.append(req.future.result())
-            except:
-                return_values.append(None)
-        return return_values
 
     @staticmethod
     def stop_thread(tid, exctype):
@@ -268,30 +275,44 @@ class Pykron:
             ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, 0)
             raise SystemError("PyThreadState_SetAsyncExc failed")
 
-    def __init__(self, pykron_logger=None, profiling=False):
+    @staticmethod
+    def join(requests):
+        return_values = []
+
+        for req in requests:
+            req.wait_for_completed()
+
+        for req in requests:
+            try:
+                return_values.append(req.future.result())
+            except:
+                return_values.append(None)
+        return return_values
+
+    def __init__(self, logging_level=LOGGING_LEVEL, logging_format=FORMAT, logging_file=False, logging_path=LOGGING_PATH, save_csv=False, profiling=False):
         if Pykron._instance != None:
             raise Exception("This class is a singleton!")
         else:
             Pykron._instance = self
-            if pykron_logger is None:
-                self._logger = PykronLogger.getInstance()
-            else:
-                self._logger = pykron_logger
+            self._logger = PykronLogger(logging_level, logging_format, logging_file, logging_path, save_csv)
             self._requests = {}
-            self._parents = {}
-            self._futures = {}
+            self._thread_ids = {}
             self._task_nr = 0
             if profiling:
                 self._profiler = PykronProfiler()
             else:
                 self._profiler = None
             self.loop = asyncio.get_event_loop()
-            self._worker_thread = threading.Thread(target=self.worker)
+            self._worker_thread = threading.Thread(target=self.worker, daemon=True)
             self._worker_thread.start()
 
     @property
     def logging(self):
         return self._logger.log
+
+    @property
+    def logger(self):
+        return self._logger
 
     def worker(self):
         self.loop.run_forever()
@@ -301,36 +322,41 @@ class Pykron:
     def createRequest(self, task, timeout, callback, cancel_propagation):
         if self._profiler:
             self._profiler.addTask(task)
-        req = AsyncRequest(self.loop, task, timeout, callback, cancel_propagation)
-        req_id = task.thread_id
+        req_id = task.task_id
+        req = AsyncRequest(self, task, timeout, callback, cancel_propagation)
         self._requests[req_id] = req
-        self._parents[req_id] = task.parent_id
-        self._futures[req_id] = req.future
-        req.future.add_done_callback(self.on_completed)
         return req
 
     def createTaskId(self):
         self._task_nr += 1
         return self._task_nr
 
-    def on_completed(self, future):
-        req_id = [k for k, v in self._futures.items() if v == future][0]
-        task = self._requests[req_id].task
-        task.completed(future)
+    def set_thread_id(self, thread_id, task_id):
+        self._thread_ids[thread_id] = task_id
+
+    def future_completed(self, request):
+        req_id = request.task.task_id
+        task = request.task
+        if not request.future.cancelled():
+            task.finalize(request.future)
+        request.stop_timeout_handler()
         if task.status != Task.SUCCEED:
             if threading.main_thread().ident != task.parent_id:
-                parent_req = Pykron.getInstance().getRequest(task._parent_id)
+                parent_req = self.getRequest(self._thread_ids[task.parent_id])
                 if parent_req.cancel_propagation:
                     parent_req.cancel()
-        if task.status != Task.TIMEOUT:
-            threading.Thread(target=self._requests[req_id].stop_timeout_handler).start()
-        self._requests[req_id].set_completed()
-        self._requests[req_id]._retval = task.retval
-        if self._requests[req_id]._callback:
-            threading.Thread(target=self._requests[req_id]._callback, args=(self._requests[req_id]._task,)).start()
-        self._requests[req_id].executor.shutdown(wait=False)
+        request.set_completed()
+        request._retval = task.retval
+        if request._callback:
+            threading.Thread(target=request._callback, args=(request._task,)).start()
         if self._logger:
             threading.Thread(target=self._logger.log_execution, args=(task,)).start()
+        if sys.version_info >= (3,9):
+            request.executor.shutdown(wait=False, cancel_futures=True)
+        else:
+            request.executor.shutdown(wait=False)
+        self._thread_ids.pop(task.thread_id)
+        self._requests.pop(req_id)
 
     def getRequest(self, req_id):
         return self._requests[req_id]
@@ -339,30 +365,41 @@ class Pykron:
         if self._logger:
             self._logger.save_csv()
 
+    def wait_all_completed(self):
+        while len(self._requests) > 0:
+            pending_reqs = self._requests.copy()
+            for req in pending_reqs.values():
+                req.completed.wait()
+
 class AsyncRequest:
 
-    def __init__(self, loop, task, timeout, callback=None, cancel_propagation=True):
+    def __init__(self, app, task, timeout, callback=None, cancel_propagation=False):
+        self._app = app
         self._task = task
         self._timeout = timeout
-        self._loop = loop
+        self._loop = self._app.loop
         self._callback = callback
-        self._timeout_handler_id = None
         self._retval = None
         self._cancel_propagation = cancel_propagation
-        self._logger = PykronLogger.getInstance()
+        self._logger = app.logger
         self._completed = threading.Event()
-        t0 = time.perf_counter()
-        self._executor = ThreadPoolExecutor(max_workers=2)
-        self._future = self._loop.run_in_executor(self._executor, task.run)
-        self._future_timer = self._loop.run_in_executor(self._executor, self._loop.call_later, timeout, self.timeout_cb)
-
-    @property
-    def executor(self):
-        return self._executor
+        self._executor = ThreadPoolExecutor()
+        self._future = self._loop.run_in_executor(self.executor, self.task.run)
+        self._future.add_done_callback(self.on_completed)
+        self._timeout_thread = threading.Timer(timeout, self.timeout_cb)
+        self._timeout_thread.start()
 
     @property
     def cancel_propagation(self):
         return self._cancel_propagation
+
+    @property
+    def completed(self):
+        return self._completed
+
+    @property
+    def executor(self):
+        return self._executor
 
     @property
     def future(self):
@@ -385,34 +422,34 @@ class AsyncRequest:
         return self._timeout
 
     def cancel(self, error=SystemExit):
-        self.logging.error("T%d: TASK CANCELLED! %s(%s) <- %s(%s)" % (self.task.task_id, self.task.func_loc, self.task.func_name, self.task.caller_loc, self.task.caller_name))
-        self.executor.shutdown(wait=False)
-        self.stop_timeout_handler()
+        self.future.cancel()
+        self.task.finalize(self.future)
         Pykron.stop_thread(self.task.thread_id, error)
-        self._loop.call_soon_threadsafe(self.future.cancel)
+
+    def on_completed(self, future):
+        self._app.future_completed(self)
 
     def set_completed(self):
         self._completed.set()
 
     def stop_timeout_handler(self):
-        self._future_timer.cancel()
+        self._timeout_thread.cancel()
 
     def timeout_cb(self):
         if not self.future.done():
-            self.logging.error("T%d: TIMEOUT OCCURRED AFTER %.3fs! %s(%s) <- %s(%s)" % (self.task.task_id, self.timeout, self.task.func_loc, self.task.func_name, self.task.caller_loc, self.task.caller_name))
             self.task.set_timeout()
             self.cancel(TimeoutError)
+
 
     def wait_for_completed(self, timeout=Pykron.TIMEOUT_DEFAULT):
         if timeout is None:
             timeout = self._timeout
-        res = self._completed.wait(timeout=timeout)
+        res = self.completed.wait(timeout=timeout)
         if res is True:
             return self._retval
         else:
             self._completed.clear()
             self.task.set_timeout()
             self.cancel(TimeoutError)
-            self._completed.wait()
-            self.logging.error("T%d: TIMEOUT OCCURRED ON wait_for_completed AFTER %.3fs! %s(%s) <- %s(%s)" % (self.task.task_id, timeout, self.task.func_loc, self.task.func_name, self.task.caller_loc, self.task.caller_name))
+            self.completed.wait()
             return None

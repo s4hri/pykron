@@ -31,16 +31,19 @@ shown below, the execution will take now only 4 seconds cause foo1 and foo2 are
 launched in parallel.
 
 ```
-@AsyncRequest.decorator
+from pykron.core import Pykron
+app = Pykron()
+
+@app.AsyncRequest()
 def foo1():
     time.sleep(4)
     print("foo1")
 
-@AsyncRequest.decorator
+@app.AsyncRequest()
 def foo2():
     time.sleep(2)
     print("foo2")
 
-foo1()
-foo2()
+foo1.asyn()
+foo2.asyn()
 ```

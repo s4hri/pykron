@@ -44,8 +44,8 @@ class TestBasic(PykronTest):
             time.sleep(0.1)
             return 1
 
-        request = inner_empty_fun()
-        time.sleep(1)
+        request = inner_empty_fun.asyn()
+        request.wait_for_completed()
         self.assertEqual(request.task.status, Task.SUCCEED)
         self.assertEqual(request.task.retval, 1)
 
@@ -57,8 +57,8 @@ class TestBasic(PykronTest):
         def inner_empty_fun():
             return 1/0
 
-        request = inner_empty_fun()
-        time.sleep(0.5)
+        request = inner_empty_fun.asyn()
+        request.wait_for_completed()
         self.assertEqual(request.task.status, Task.FAILED)
 
     def test_task_running(self):
@@ -68,9 +68,11 @@ class TestBasic(PykronTest):
         def level0_fun():
             time.sleep(2)
 
-        request = level0_fun()
-        time.sleep(0.1) # to avoid Task.IDLE
+        request = level0_fun.asyn()
+        request.task.started.wait()
         self.assertEqual(request.task.status, Task.RUNNING)
+        request.wait_for_completed()
+        self.assertEqual(request.task.status, Task.SUCCEED)
 
     def test_task_cancelled(self):
         ''' tests if Task.CANCELLED is properly used
@@ -83,10 +85,10 @@ class TestBasic(PykronTest):
             for i in range(0,90):
                 time.sleep(0.1)
 
-        request = level0_fun()
-        time.sleep(0.1) # to avoid Task.IDLE
+        request = level0_fun.asyn()
+        time.sleep(0.1)
         request.cancel()
-        time.sleep(0.1) # wait for it
+        request.wait_for_completed()
         self.assertEqual(request.task.status, Task.CANCELLED)
 
 
@@ -102,7 +104,7 @@ class TestBasic(PykronTest):
             time.sleep(0.1)
             return 1
 
-        inner_empty_fun().wait_for_completed()
+        inner_empty_fun.asyn().wait_for_completed()
 
     def test_return_value_through_future(self):
         ''' see if the future properly stores a returned value
@@ -113,20 +115,9 @@ class TestBasic(PykronTest):
             time.sleep(0.1)
             return 'test'
 
-        task = inner_fun()
-        time.sleep(0.3)
-        self.assertEqual(task.future.result(), 'test')
-
-    def test_return_value_wait_for_completed(self):
-        ''' test wait_for_completed together with a callback
-        '''
-        @Pykron.AsyncRequest()
-        def inner_fun():
-            time.sleep(0.1)
-            return 'test'
-
-        val = inner_fun().wait_for_completed()
-        self.assertEqual(val, 'test')
+        req = inner_fun.asyn()
+        req.wait_for_completed()
+        self.assertEqual(req.future.result(), 'test')
 
     def test_kwargs_forward(self):
         ''' test kwargs
@@ -136,11 +127,11 @@ class TestBasic(PykronTest):
             time.sleep(0.1)
             return arg2
 
-        val = inner_fun(False,False).wait_for_completed()
+        val = inner_fun.asyn(False,False).wait_for_completed()
         self.assertEqual(val, False)
 
     def test_same_time(self):
-        ''' test if 5 functions can be run at the same time (without join)
+        ''' test if 5 functions can be run at the same time
         '''
         @Pykron.AsyncRequest()
         def fun1(arg):
@@ -150,11 +141,12 @@ class TestBasic(PykronTest):
         args = ['a1','b2','c3','d4','e5']
         requests = list()
         for arg in args:
-            requests.append( (fun1(arg),arg) )
+            req = fun1.asyn(arg)
+            requests.append(req)
 
-        time.sleep(1) # to avoid Task.IDLE
-        for (request,arg) in requests:
-            self.assertEqual(request.future.result(), arg)
+        retvals = Pykron.join(requests)
+        for i in range(0, len(retvals)):
+            self.assertEqual(retvals[i], args[i])
 
 if __name__ == '__main__':
     unittest.main()

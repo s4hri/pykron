@@ -32,53 +32,11 @@ import sys
 sys.path.append('..')
 
 from pykron.core import Pykron
-from pykron.logging import PykronLogger
-import time
+app = Pykron()
 
-logger = PykronLogger(save_csv=True)
+@app.AsyncRequest()
+def div(x, y):
+    return x/y
 
-if sys.version_info > (3,7):
-    app = Pykron(profiling=True, pykron_logger=logger)
-else:
-    app = Pykron(pykron_logger=logger)
-
-@app.AsyncRequest(timeout=120)
-def fun1():
-    app.logging.debug("Fun 1 reporting in")
-    time.sleep(1)
-    app.logging.debug("Fun 1 reporting out")
-    time.sleep(1)
-    return 1
-
-@app.AsyncRequest(timeout=120)
-def fun2():
-    app.logging.debug("Fun 2 reporting in")
-    time.sleep(1)
-    fun1()
-    app.logging.debug("Fun 2 reporting out")
-    time.sleep(1)
-    return 1
-
-@app.AsyncRequest(timeout=120)
-def fun3():
-    app.logging.debug("Fun 3 reporting in")
-    time.sleep(1)
-    fun2()
-    app.logging.debug("Fun 3 reporting out")
-    time.sleep(1)
-    return 1
-
-@app.AsyncRequest(timeout=120)
-def fun4():
-    app.logging.debug("Fun 4 reporting in")
-    time.sleep(1)
-    fun3()
-    app.logging.debug("Fun 4 reporting out")
-    time.sleep(1)
-    return 1
-
-
-fun4()
-time.sleep(12)
-
-app.close()
+res = div(1,2)
+print(res)

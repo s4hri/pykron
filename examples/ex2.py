@@ -28,26 +28,22 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-''' Example of saving function executions to a file'''
-
-
 import sys
 sys.path.append('..')
 
 from pykron.core import Pykron
+app = Pykron()
+
 import time
+@app.AsyncRequest()
+def div(x, y):
+    time.sleep(2)
+    return x/y
 
-app = Pykron.getInstance()
+req = div.asyn(1,2)
+res = req.wait_for_completed()
+print(req.task.status, res)
 
-@app.AsyncRequest(timeout=120)
-def fun4():
-    logger.log.debug("Fun 4 reporting in")
-    time.sleep(1)
-    logger.log.debug("Fun 4 reporting out")
-    time.sleep(1)
-
-
-logger = PykronLogger.getInstance()
-fun4()
-time.sleep(2.5)
-app.close()
+req = div.asyn(1,0)
+res = req.wait_for_completed()
+print(req.task.status, req.task.exception)

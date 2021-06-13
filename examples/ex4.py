@@ -28,24 +28,16 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 
-''' Example of saving log as a collection of JSON objects (one object - one line) '''
-
+import time
 import sys
 sys.path.append('..')
 
-from pykron.core import Pykron, PykronLogger
-import time
+from pykron.core import Pykron
+app = Pykron()
 
-logger = PykronLogger.getInstance(logging_path='.', logging_format=PykronLogger.FORMAT_JSON)
-app = Pykron.getInstance()
+@app.AsyncRequest(timeout=2.0)
+def foo(x):
+    time.sleep(x)
 
-@app.AsyncRequest(timeout=120)
-def fun4():
-    logger.log.debug("Fun 4 reporting in")
-    time.sleep(1)
-    logger.log.debug("Fun 4 reporting out")
-    time.sleep(1)
-
-fun4()
-time.sleep(2.5)
-app.close()
+foo.asyn(3)
+foo.asyn(5).wait_for_completed(timeout=1.0)
