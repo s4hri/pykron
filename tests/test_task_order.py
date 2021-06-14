@@ -46,8 +46,8 @@ class TestTaskOrder(PykronTest):
             time.sleep(0.1)
             return 1
 
-        a = like.asyn("strawberries")
-        b = like.asyn("bananas")
+        a = like("strawberries")
+        b = like("bananas")
         a.task.started.wait()
         self.assertEqual(a.task.status, Task.RUNNING)
         b.task.started.wait()
@@ -55,7 +55,7 @@ class TestTaskOrder(PykronTest):
         Pykron.join([a,b])
         self.assertEqual(a.task.status, Task.SUCCEED)
         self.assertEqual(b.task.status, Task.SUCCEED)
-        c = like.asyn("mangos")
+        c = like("mangos")
         res = c.wait_for_completed()
         self.assertEqual(c.task.status, Task.SUCCEED)
         self.assertEqual(res, 1)
@@ -64,7 +64,7 @@ class TestTaskOrder(PykronTest):
         # 2-levels nested function foo1->foo2->foo3
         @Pykron.AsyncRequest()
         def foo1():
-            res = foo2.asyn().wait_for_completed()
+            res = foo2().wait_for_completed()
             time.sleep(5)
             return 1
 
@@ -74,7 +74,7 @@ class TestTaskOrder(PykronTest):
             while True:
                 print("I am alive! ")
                 time.sleep(1)
-                foo3.asyn()
+                foo3()
                 time.sleep(2)
             return 2
 
@@ -89,7 +89,7 @@ class TestTaskOrder(PykronTest):
             time.sleep(1)
             return 1/0
 
-        req = foo1.asyn()
+        req = foo1()
         req.task.started.wait()
         self.assertEqual(req.task.status, Task.RUNNING)
         req.wait_for_completed()

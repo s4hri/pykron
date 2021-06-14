@@ -44,7 +44,7 @@ class TestBasic(PykronTest):
             time.sleep(0.1)
             return 1
 
-        request = inner_empty_fun.asyn()
+        request = inner_empty_fun()
         request.wait_for_completed()
         self.assertEqual(request.task.status, Task.SUCCEED)
         self.assertEqual(request.task.retval, 1)
@@ -57,7 +57,7 @@ class TestBasic(PykronTest):
         def inner_empty_fun():
             return 1/0
 
-        request = inner_empty_fun.asyn()
+        request = inner_empty_fun()
         request.wait_for_completed()
         self.assertEqual(request.task.status, Task.FAILED)
 
@@ -68,7 +68,7 @@ class TestBasic(PykronTest):
         def level0_fun():
             time.sleep(2)
 
-        request = level0_fun.asyn()
+        request = level0_fun()
         request.task.started.wait()
         self.assertEqual(request.task.status, Task.RUNNING)
         request.wait_for_completed()
@@ -85,7 +85,7 @@ class TestBasic(PykronTest):
             for i in range(0,90):
                 time.sleep(0.1)
 
-        request = level0_fun.asyn()
+        request = level0_fun()
         time.sleep(0.1)
         request.cancel()
         request.wait_for_completed()
@@ -104,7 +104,7 @@ class TestBasic(PykronTest):
             time.sleep(0.1)
             return 1
 
-        inner_empty_fun.asyn().wait_for_completed()
+        inner_empty_fun().wait_for_completed()
 
     def test_return_value_through_future(self):
         ''' see if the future properly stores a returned value
@@ -115,7 +115,7 @@ class TestBasic(PykronTest):
             time.sleep(0.1)
             return 'test'
 
-        req = inner_fun.asyn()
+        req = inner_fun()
         req.wait_for_completed()
         self.assertEqual(req.future.result(), 'test')
 
@@ -127,7 +127,7 @@ class TestBasic(PykronTest):
             time.sleep(0.1)
             return arg2
 
-        val = inner_fun.asyn(False,False).wait_for_completed()
+        val = inner_fun(False,False).wait_for_completed()
         self.assertEqual(val, False)
 
     def test_same_time(self):
@@ -141,7 +141,7 @@ class TestBasic(PykronTest):
         args = ['a1','b2','c3','d4','e5']
         requests = list()
         for arg in args:
-            req = fun1.asyn(arg)
+            req = fun1(arg)
             requests.append(req)
 
         retvals = Pykron.join(requests)

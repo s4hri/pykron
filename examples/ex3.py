@@ -41,4 +41,4 @@ def div(x, y):
     return x/y
 
 
-Pykron.join([div.asyn(1,2), div.asyn(3,2), div.asyn(1,0), div.asyn(3,2)])
+Pykron.join([div(1,2), div(3,2), div(1,0), div(3,2)])

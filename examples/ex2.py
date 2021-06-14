@@ -40,10 +40,10 @@ def div(x, y):
     time.sleep(2)
     return x/y
 
-req = div.asyn(1,2)
+req = div(1,2)
 res = req.wait_for_completed()
 print(req.task.status, res)
 
-req = div.asyn(1,0)
+req = div(1,0)
 res = req.wait_for_completed()
 print(req.task.status, req.task.exception)

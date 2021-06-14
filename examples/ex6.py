@@ -13,6 +13,6 @@ def foo():
     time.sleep(1)
 
 for _ in range(0,1000000):
-    foo.asyn()
+    foo()
 
 app.close()

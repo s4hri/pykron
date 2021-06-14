@@ -39,5 +39,5 @@ app = Pykron()
 def foo(x):
     time.sleep(x)
 
-foo.asyn(3)
-foo.asyn(5).wait_for_completed(timeout=1.0)
+foo(3)
+foo(5).wait_for_completed(timeout=1.0)

@@ -46,7 +46,7 @@ class TestTaskTimeout(PykronTest):
         def level0_fun():
             time.sleep(0.5)
 
-        request = level0_fun.asyn()
+        request = level0_fun()
         time.sleep(1) # this is not a wait_for_completed test, so brute-force it
         self.assertEqual(request.task.status, Task.TIMEOUT)
         self.assertLess(request.task.duration, 0.5)
@@ -59,7 +59,7 @@ class TestTaskTimeout(PykronTest):
         def inner_fun():
             time.sleep(3.0)
 
-        request = inner_fun.asyn()
+        request = inner_fun()
         request.wait_for_completed(timeout=1.0)
         self.assertEqual(request.task.status, Task.TIMEOUT)
         self.assertLess(request.task.duration, 2.0)
@@ -74,12 +74,12 @@ class TestTaskTimeout(PykronTest):
 
         @Pykron.AsyncRequest(timeout=2.0)
         def foo2():
-            req = foo1.asyn()
+            req = foo1()
             time.sleep(1.0)
             self.assertEqual(req.task.status, Task.TIMEOUT)
             self.assertLess(req.task.duration, 0.5)
 
-        req = foo2.asyn()
+        req = foo2()
         time.sleep(2.0)
         self.assertEqual(req.task.status, Task.CANCELLED)
 
@@ -93,11 +93,11 @@ class TestTaskTimeout(PykronTest):
 
         @Pykron.AsyncRequest(timeout=2.0, cancel_propagation=False)
         def foo2():
-            req = foo1.asyn()
+            req = foo1()
             time.sleep(1.0)
             self.assertEqual(req.task.status, Task.TIMEOUT)
             self.assertLess(req.task.duration, 0.5)
 
-        req = foo2.asyn()
+        req = foo2()
         time.sleep(2.0)
         self.assertEqual(req.task.status, Task.SUCCEED)

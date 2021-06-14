@@ -230,8 +230,7 @@ class Pykron:
     @staticmethod
     def AsyncRequest(timeout=TIMEOUT_DEFAULT, callback=None, cancel_propagation=True):
         def wrapper(target):
-
-                def asyn(*args, **kwargs):
+                def f(*args, **kwargs):
                     parent_id = threading.current_thread().ident
                     task = Task(task_id=Pykron.getInstance().createTaskId(),
                             target=target,
@@ -239,13 +238,7 @@ class Pykron:
                             kwargs=kwargs,
                             parent_id=parent_id)
                     return Pykron.getInstance().createRequest(task, timeout, callback, cancel_propagation)
-
-                def f(*args, **kwargs):
-                    return target(*args, **kwargs)
-
-                w = f
-                w.__setattr__('asyn', asyn)
-                return w
+                return f
         return wrapper
 
     @staticmethod

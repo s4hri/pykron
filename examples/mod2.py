@@ -9,5 +9,5 @@ app = Pykron.getInstance()
 
 @app.AsyncRequest()
 def foo2():
-    mod1.foo1.asyn()
+    mod1.foo1()
     return 1

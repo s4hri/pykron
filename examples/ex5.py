@@ -41,13 +41,13 @@ def goo():
 
 @app.AsyncRequest()
 def foo():
-    goo.asyn()
+    goo()
     time.sleep(1)
 
 @app.AsyncRequest()
 def noo():
     time.sleep(4)
 
-req = noo.asyn()
-foo.asyn().wait_for_completed()
+req = noo()
+foo().wait_for_completed()
 req.wait_for_completed()

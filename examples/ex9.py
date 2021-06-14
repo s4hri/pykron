@@ -29,11 +29,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 import sys
 sys.path.append('..')
-import mod2
+
 from pykron.core import Pykron
+app = Pykron()
 
-app = Pykron(logging_path)
+import time
 
-mod2.foo2().wait_for_completed()
+class Foo:
 
-app.close()
+    @app.AsyncRequest()
+    def div(self, x, y):
+        time.sleep(2)
+        return x/y
+
+foo = Foo()
+req = foo.div(1,2)
+res = req.wait_for_completed()
+print(req.task.status, res)

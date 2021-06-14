@@ -10,7 +10,7 @@ app = Pykron(logging_file=True, save_csv=True)
 
 @Pykron.AsyncRequest()
 def foo1():
-    res = foo2.asyn().wait_for_completed()
+    res = foo2().wait_for_completed()
     time.sleep(5)
     return 1
 
@@ -20,7 +20,7 @@ def foo2():
     while True:
         print("I am alive! ")
         time.sleep(1)
-        foo3.asyn()
+        foo3()
         time.sleep(2)
 
 # User-defined callback function running once the foo1 ends
@@ -34,6 +34,6 @@ def foo3():
     time.sleep(1)
     return 1/0
 
-req = foo1.asyn()
+req = foo1()
 req.wait_for_completed()
 time.sleep(5)
