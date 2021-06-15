@@ -79,7 +79,6 @@ class Task:
         self._caller_frame = stack()[2][0]
         caller_module = inspect.getmodule(self._caller_frame.f_code)
         caller_info = getframeinfo(self._caller_frame)
-        caller_source = inspect.getsourcelines(caller_module)
         self._func_loc = "[%s:%d]" % (os.path.relpath(inspect.getsourcefile(self._target)), inspect.getsourcelines(self._target)[1]+1)
         self._caller_name = caller_info.function
         self._caller_loc = "[%s:%d]" % (os.path.relpath(caller_info.filename), caller_info.lineno)
@@ -315,9 +314,7 @@ class Pykron:
     def createRequest(self, task, timeout, callback, cancel_propagation):
         if self._profiler:
             self._profiler.addTask(task)
-        req_id = task.task_id
         req = AsyncRequest(self, task, timeout, callback, cancel_propagation)
-        self._requests[req_id] = req
         return req
 
     def createTaskId(self):
@@ -326,6 +323,9 @@ class Pykron:
 
     def set_thread_id(self, thread_id, task_id):
         self._thread_ids[thread_id] = task_id
+
+    def set_req_id(self, req_id, req):
+        self._requests[req_id] = req
 
     def future_completed(self, request):
         req_id = request.task.task_id
@@ -377,6 +377,7 @@ class AsyncRequest:
         self._logger = app.logger
         self._completed = threading.Event()
         self._executor = ThreadPoolExecutor()
+        Pykron.getInstance().set_req_id(self.task.task_id, self)
         self._future = self._loop.run_in_executor(self.executor, self.task.run)
         self._future.add_done_callback(self.on_completed)
         self._timeout_thread = threading.Timer(timeout, self.timeout_cb)
